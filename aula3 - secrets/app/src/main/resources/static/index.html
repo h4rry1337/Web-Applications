@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍦 Sweet Dreams Ice Cream - Order Management</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(45deg, #ff6b6b, #ffa726);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 2.5em;
+        }
+        .header p {
+            margin: 0;
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 30px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            background: #f9f9f9;
+        }
+        .section h2 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #ff6b6b;
+            padding-bottom: 10px;
+        }
+        .api-endpoint {
+            background: #e8f5e8;
+            border: 1px solid #4caf50;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+        .danger-warning {
+            background: #ffebee;
+            border: 1px solid #f44336;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            color: #d32f2f;
+        }
+        .info-box {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .endpoint-list {
+            list-style: none;
+            padding: 0;
+        }
+        .endpoint-list li {
+            background: white;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #ff6b6b;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .method {
+            font-weight: bold;
+            color: #ff6b6b;
+            margin-right: 10px;
+        }
+        .url {
+            font-family: monospace;
+            background: #f5f5f5;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+        .warning-icon {
+            font-size: 1.5em;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🍦 Sweet Dreams Ice Cream</h1>
+            <p>Order Management Microservice v1.0.0</p>
+        </div>
+        
+        <div class="content">
+            <div class="section">
+                <h2>Application Information</h2>
+                <div class="info-box">
+                    <strong>Service:</strong> Ice Cream Order Management<br>
+                    <strong>Version:</strong> 1.0.0<br>
+                    <strong>Port:</strong> 8080<br>
+                    <strong>Base URL:</strong> <code>http://localhost:8080/api/v1</code><br>
+                    <strong>Framework:</strong> Spring Boot 3.2.0 with Actuator
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>🔌 REST API Endpoints</h2>
+                <ul class="endpoint-list">
+                    <li>
+                        <span class="method">GET</span>
+                        <span class="url">/api/v1/orders</span> - Get all ice cream orders
+                    </li>
+                    <li>
+                        <span class="method">POST</span>
+                        <span class="url">/api/v1/orders</span> - Create new ice cream order
+                    </li>
+                    <li>
+                        <span class="method">GET</span>
+                        <span class="url">/api/v1/orders/{id}</span> - Get specific order by ID
+                    </li>
+                    <li>
+                        <span class="method">GET</span>
+                        <span class="url">/api/v1/orders/customer/{email}</span> - Get orders by customer email
+                    </li>
+                    <li>
+                        <span class="method">GET</span>
+                        <span class="url">/api/v1/orders/status/{status}</span> - Get orders by status
+                    </li>
+                    <li>
+                        <span class="method">PATCH</span>
+                        <span class="url">/api/v1/orders/{id}/status</span> - Update order status
+                    </li>
+                    <li>
+                        <span class="method">POST</span>
+                        <span class="url">/api/v1/orders/{id}/cancel</span> - Cancel order
+                    </li>
+                    <li>
+                        <span class="method">GET</span>
+                        <span class="url">/api/v1/orders/statistics</span> - Get order statistics
+                    </li>
+                </ul>
+            </div>
+
+            <div class="section">
+                <h2>Spring Boot Actuator Endpoints</h2>
+                <ul class="endpoint-list">
+                    <li>
+                        <span class="method">GET</span>
+                        <span class="url">/actuator/health</span> - Application health status
+                    </li>
+                    <li>
+                        <span class="method">GET</span>
+                        <span class="url">/actuator/env</span> - Environment properties
+                    </li>
+                    <li>
+                        <span class="method">GET</span>
+                        <span class="url">/actuator/heapdump</span> - Download heap dump
+                    </li>
+                    <li>
+                        <span class="method">GET</span>
+                        <span class="url">/actuator/configprops</span> - Configuration properties
+                    </li>
+                    <li>
+                        <span class="method">GET</span>
+                        <span class="url">/actuator/beans</span> - Application beans
+                    </li>
+                    <li>
+                        <span class="method">GET</span>
+                        <span class="url">/actuator/mappings</span> - Request mappings
+                    </li>
+                </ul>
+            </div>
+
+
+            <div class="section">
+                <h2>Database Access</h2>
+                <div class="info-box">
+                    <strong>H2 Console:</strong> <a href="/api/v1/h2-console" target="_blank">http://localhost:8080/api/v1/h2-console</a><br>
+                    <strong>JDBC URL:</strong> <code>jdbc:h2:mem:icecream_orders</code><br>
+                    <strong>Username:</strong> <code>sa</code><br>
+                    <strong>Password:</strong> <em>(empty)</em>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>📋 Sample Order JSON</h2>
+                <div class="api-endpoint">
+POST /api/v1/orders
+Content-Type: application/json
+
+{
+  "customerName": "John Doe",
+  "customerEmail": "john.doe@email.com",
+  "customerPhone": "+1-555-123-4567",
+  "deliveryAddress": "123 Main St, Ice Cream City, IC 12345",
+  "items": [
+    {
+      "flavor": "Vanilla",
+      "size": "Large",
+      "quantity": 2,
+      "unitPrice": 5.99,
+      "toppings": "Chocolate chips, Sprinkles"
+    }
+  ],
+  "totalAmount": 11.98,
+  "paymentMethod": "CREDIT_CARD",
+  "specialInstructions": "Please ring doorbell twice"
+}
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

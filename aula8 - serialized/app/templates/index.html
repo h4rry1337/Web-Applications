@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome to FreshMart - Your Local Mini Market{% endblock %}
+
+{% block content %}
+<div class="hero">
+    <div class="hero-content">
+        <h2>Welcome to FreshMart</h2>
+        <p class="hero-subtitle">Your neighborhood mini market with fresh products and great prices</p>
+        
+        <div class="hero-features">
+            <div class="feature">
+                <div class="feature-icon">🥬</div>
+                <h3>Fresh Produce</h3>
+                <p>Daily fresh fruits and vegetables sourced from local farms</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🥛</div>
+                <h3>Dairy & Bakery</h3>
+                <p>Fresh milk, cheese, and baked goods delivered every morning</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🛒</div>
+                <h3>Convenient Shopping</h3>
+                <p>Shop online and pick up in-store or get home delivery</p>
+            </div>
+        </div>
+
+        {% if not session.username %}
+        <div class="cta-section">
+            <a href="{{ url_for('login') }}" class="btn btn-primary btn-large">Start Shopping</a>
+        </div>
+        {% else %}
+        <div class="cta-section">
+            <a href="{{ url_for('shop') }}" class="btn btn-primary btn-large">Browse Products</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="products-preview">
+    <h3>Featured Products</h3>
+    <div class="products-grid">
+        {% for product_id, product in products.items() %}
+            {% if loop.index <= 6 %}
+            <div class="product-card">
+                <div class="product-image">{{ product.image }}</div>
+                <div class="product-info">
+                    <h4>{{ product.name }}</h4>
+                    <p class="product-category">{{ product.category }}</p>
+                    <div class="product-price">${{ "%.2f"|format(product.price) }}</div>
+                    <div class="product-stock">{{ product.stock }} in stock</div>
+                </div>
+            </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+    
+    {% if session.username %}
+        <div class="view-all">
+            <a href="{{ url_for('shop') }}" class="btn btn-secondary">View All Products</a>
+        </div>
+    {% endif %}
+</div>
+
+<div class="info-section">
+    <div class="info-grid">
+        <div class="info-card">
+            <h3>Store Hours</h3>
+            <p><strong>Monday - Saturday:</strong> 7:00 AM - 10:00 PM</p>
+            <p><strong>Sunday:</strong> 8:00 AM - 9:00 PM</p>
+            <p><strong>Holidays:</strong> 9:00 AM - 6:00 PM</p>
+        </div>
+        <div class="info-card">
+            <h3>Contact Us</h3>
+            <p><strong>Phone:</strong> (555) 123-FRESH</p>
+            <p><strong>Email:</strong> info@freshmart.com</p>
+            <p><strong>Address:</strong> 123 Market Street</p>
+        </div>
+        <div class="info-card">
+            <h3>Delivery</h3>
+            <p><strong>Free delivery</strong> on orders over $25</p>
+            <p><strong>Same day delivery</strong> available</p>
+            <p><strong>Pickup:</strong> Ready in 30 minutes</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

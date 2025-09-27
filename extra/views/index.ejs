@@ -1,0 +1,180 @@
+<%- include('header') %>
+
+<div class="row">
+    <div class="col-12">
+        <div class="hero-section bg-primary text-white rounded p-5 mb-5">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="display-4 fw-bold">
+                        <i class="fas fa-headset me-3"></i>
+                        TechSupport Pro
+                    </h1>
+                    <p class="lead">Professional IT Support & Helpdesk Management System</p>
+                    <p>Get fast, reliable technical support for all your IT needs. Our expert team is here to help you resolve issues quickly and efficiently.</p>
+                    
+                    <% if (!user) { %>
+                        <div class="mt-4">
+                            <a href="/login" class="btn btn-light btn-lg me-3">
+                                <i class="fas fa-sign-in-alt me-2"></i>Access Support Portal
+                            </a>
+                            <a href="/knowledge-base" class="btn btn-outline-light btn-lg">
+                                <i class="fas fa-book me-2"></i>Knowledge Base
+                            </a>
+                        </div>
+                    <% } else { %>
+                        <div class="mt-4">
+                            <a href="/dashboard" class="btn btn-light btn-lg me-3">
+                                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                            </a>
+                            <a href="/tickets/new" class="btn btn-outline-light btn-lg">
+                                <i class="fas fa-plus me-2"></i>New Ticket
+                            </a>
+                        </div>
+                    <% } %>
+                </div>
+                <div class="col-md-4 text-center">
+                    <i class="fas fa-tools display-1 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<% if (user) { %>
+<div class="row mb-4">
+    <div class="col-12">
+        <h2>Support Overview</h2>
+    </div>
+</div>
+
+<div class="row g-4 mb-5">
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Total Tickets</h6>
+                        <h2 class="mb-0"><%= stats.totalTickets %></h2>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-ticket-alt fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Open Tickets</h6>
+                        <h2 class="mb-0"><%= stats.openTickets %></h2>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-exclamation-triangle fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">In Progress</h6>
+                        <h2 class="mb-0"><%= stats.inProgressTickets %></h2>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-clock fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Resolved</h6>
+                        <h2 class="mb-0"><%= stats.resolvedTickets %></h2>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-check-circle fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<% } %>
+
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="fas fa-lightning-bolt text-warning me-2"></i>
+                    Quick Support
+                </h5>
+                <p class="card-text">Get immediate assistance for urgent technical issues. Our support team responds within 15 minutes during business hours.</p>
+                <% if (user) { %>
+                    <a href="/tickets/new" class="btn btn-primary">Create Urgent Ticket</a>
+                <% } else { %>
+                    <a href="/login" class="btn btn-outline-primary">Login for Support</a>
+                <% } %>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="fas fa-book text-info me-2"></i>
+                    Knowledge Base
+                </h5>
+                <p class="card-text">Browse our comprehensive knowledge base for step-by-step guides and troubleshooting articles.</p>
+                <a href="/knowledge-base" class="btn btn-info">Browse Articles</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="fas fa-phone text-success me-2"></i>
+                    Contact Support
+                </h5>
+                <p class="card-text">Need to speak with someone? Our technical support team is available 24/7 for critical issues.</p>
+                <div class="d-grid">
+                    <button class="btn btn-success" onclick="alert('Call +1-800-TECH-HELP')">
+                        Call Now
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<% if (!user) { %>
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center">
+                <h5 class="card-title">New to TechSupport?</h5>
+                <p class="card-text">Join thousands of satisfied customers who trust us with their IT support needs.</p>
+                <a href="/login" class="btn btn-primary btn-lg">Get Started Today</a>
+            </div>
+        </div>
+    </div>
+</div>
+<% } %>
+
+<%- include('footer') %>

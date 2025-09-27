@@ -1,0 +1,14 @@
+Account_Code,Account_Name,Account_Type,Current_Assets,Non_Current_Assets,Current_Liabilities,Non_Current_Liabilities,Equity
+1001,Cash and Cash Equivalents,Asset,125000.00,,,,,
+1002,Accounts Receivable,Asset,85000.00,,,,,
+1003,Inventory,Asset,95000.00,,,,,
+1004,Prepaid Expenses,Asset,12000.00,,,,,
+1101,Property Plant Equipment,Asset,,350000.00,,,,
+1102,Accumulated Depreciation,Asset,,-45000.00,,,,
+2001,Accounts Payable,Liability,,,65000.00,,
+2002,Accrued Expenses,Liability,,,18000.00,,
+2003,Short-term Debt,Liability,,,25000.00,,
+2101,Long-term Debt,Liability,,,,150000.00,
+3001,Share Capital,Equity,,,,,200000.00
+3002,Retained Earnings,Equity,,,,,209000.00
+Total,Balance Sheet Summary,,317000.00,305000.00,108000.00,150000.00,409000.00

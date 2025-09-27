@@ -1,0 +1,274 @@
+<%- include('header') %>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2>
+            <span class="badge bg-secondary me-2"><%= ticket.id %></span>
+            <%= ticket.title %>
+        </h2>
+        <small class="text-muted">
+            Created by <%= ticket.created_by %> on <%= moment(ticket.created_at).format('MMMM DD, YYYY [at] HH:mm') %>
+        </small>
+    </div>
+    <div>
+        <a href="/dashboard" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Ticket Details
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <strong>Category:</strong>
+                    </div>
+                    <div class="col-md-9">
+                        <span class="badge bg-light text-dark"><%= ticket.category %></span>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <strong>Priority:</strong>
+                    </div>
+                    <div class="col-md-9">
+                        <% if (ticket.priority === 'High') { %>
+                            <span class="badge bg-danger">High Priority</span>
+                        <% } else if (ticket.priority === 'Medium') { %>
+                            <span class="badge bg-warning">Medium Priority</span>
+                        <% } else { %>
+                            <span class="badge bg-info">Low Priority</span>
+                        <% } %>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <strong>Status:</strong>
+                    </div>
+                    <div class="col-md-9">
+                        <% if (ticket.status === 'Open') { %>
+                            <span class="badge bg-warning">Open</span>
+                        <% } else if (ticket.status === 'In Progress') { %>
+                            <span class="badge bg-primary">In Progress</span>
+                        <% } else if (ticket.status === 'Resolved') { %>
+                            <span class="badge bg-success">Resolved</span>
+                        <% } else { %>
+                            <span class="badge bg-secondary"><%= ticket.status %></span>
+                        <% } %>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <strong>Assigned to:</strong>
+                    </div>
+                    <div class="col-md-9">
+                        <i class="fas fa-user me-1"></i><%= ticket.assigned_to %>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="mb-3">
+                    <strong>Description:</strong>
+                    <div class="mt-2 p-3 bg-light rounded">
+                        <%= ticket.description %>
+                    </div>
+                </div>
+                
+                <% if (ticket.attachments && ticket.attachments.length > 0) { %>
+                    <div class="mb-3">
+                        <strong>Attachments:</strong>
+                        <div class="mt-2">
+                            <% ticket.attachments.forEach(attachment => { %>
+                                <div class="d-inline-block me-3 mb-2">
+                                    <a href="/download/<%= attachment.path.split('/').pop() %>" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-download me-1"></i>
+                                        <%= attachment.filename %>
+                                    </a>
+                                </div>
+                            <% }); %>
+                        </div>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-comments me-2"></i>
+                    Comments (<%= ticket.comments.length %>)
+                </h6>
+            </div>
+            <div class="card-body">
+                <% if (ticket.comments.length === 0) { %>
+                    <div class="text-center py-4 text-muted">
+                        <i class="fas fa-comment fa-2x mb-2"></i>
+                        <p>No comments yet. Be the first to add a comment!</p>
+                    </div>
+                <% } else { %>
+                    <div class="comments-list">
+                        <% ticket.comments.forEach((comment, index) => { %>
+                            <div class="comment mb-3 <% if (index < ticket.comments.length - 1) { %>border-bottom pb-3<% } %>">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-circle bg-primary text-white me-2">
+                                            <%= comment.user.charAt(0).toUpperCase() %>
+                                        </div>
+                                        <div>
+                                            <strong><%= comment.user %></strong>
+                                            <small class="text-muted d-block">
+                                                <%= moment(comment.timestamp).format('MMMM DD, YYYY [at] HH:mm') %>
+                                                (<%= moment(comment.timestamp).fromNow() %>)
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="comment-content ms-5">
+                                    <%= comment.message %>
+                                </div>
+                            </div>
+                        <% }); %>
+                    </div>
+                <% } %>
+                
+                <hr>
+                
+                <form method="POST" action="/tickets/<%= ticket.id %>/comment">
+                    <div class="mb-3">
+                        <label for="message" class="form-label">Add Comment</label>
+                        <textarea class="form-control" id="message" name="message" rows="3" 
+                                  placeholder="Type your comment here..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane me-2"></i>Add Comment
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-clock me-2"></i>Timeline
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-info"></div>
+                        <div class="timeline-content">
+                            <small class="text-muted">Created</small><br>
+                            <strong><%= moment(ticket.created_at).format('MMM DD, YYYY HH:mm') %></strong>
+                        </div>
+                    </div>
+                    
+                    <% if (ticket.updated_at !== ticket.created_at) { %>
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-primary"></div>
+                            <div class="timeline-content">
+                                <small class="text-muted">Last Updated</small><br>
+                                <strong><%= moment(ticket.updated_at).format('MMM DD, YYYY HH:mm') %></strong>
+                            </div>
+                        </div>
+                    <% } %>
+                    
+                    <% if (ticket.status === 'Resolved') { %>
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-success"></div>
+                            <div class="timeline-content">
+                                <small class="text-muted">Resolved</small><br>
+                                <strong><%= moment(ticket.updated_at).format('MMM DD, YYYY HH:mm') %></strong>
+                            </div>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+        
+        <% if (user.role === 'admin') { %>
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-cogs me-2"></i>Admin Actions
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="/tickets/<%= ticket.id %>/status">
+                        <div class="mb-3">
+                            <label for="status" class="form-label">Change Status</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="Open" <% if (ticket.status === 'Open') { %>selected<% } %>>Open</option>
+                                <option value="In Progress" <% if (ticket.status === 'In Progress') { %>selected<% } %>>In Progress</option>
+                                <option value="Resolved" <% if (ticket.status === 'Resolved') { %>selected<% } %>>Resolved</option>
+                                <option value="Closed" <% if (ticket.status === 'Closed') { %>selected<% } %>>Closed</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-primary">
+                            <i class="fas fa-save me-1"></i>Update Status
+                        </button>
+                    </form>
+                </div>
+            </div>
+        <% } %>
+    </div>
+</div>
+
+<style>
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.timeline {
+    position: relative;
+    padding-left: 20px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: #dee2e6;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -12px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid white;
+}
+
+.timeline-content {
+    margin-left: 10px;
+}
+</style>
+
+<%- include('footer') %>

@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Account Balance - SecureBank Online{% endblock %}
+
+{% block content %}
+<div class="balance-page">
+    <div class="page-header">
+        <h2>Account Balance</h2>
+        <p>{{ user.full_name }} | Account: {{ user.account_number }}</p>
+    </div>
+
+    <div class="balance-details">
+        <div class="balance-card-large">
+            <div class="account-info">
+                <h3>{{ user.account_type }} Account</h3>
+                <div class="account-number">{{ user.account_number }}</div>
+            </div>
+            
+            <div class="balance-display">
+                <label>Available Balance</label>
+                <div class="balance-amount">${{ "%.2f"|format(user.balance) }}</div>
+            </div>
+            
+            <div class="balance-breakdown">
+                <div class="balance-item">
+                    <span>Current Balance:</span>
+                    <span>${{ "%.2f"|format(user.balance) }}</span>
+                </div>
+                <div class="balance-item">
+                    <span>Pending Transactions:</span>
+                    <span>$0.00</span>
+                </div>
+                <div class="balance-item">
+                    <span>Available Credit:</span>
+                    <span>N/A</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="account-actions">
+            <h3>Account Actions</h3>
+            <div class="action-grid">
+                <button class="action-item" onclick="showTransferModal()">
+                    <span class="action-icon">💸</span>
+                    <span>Transfer Funds</span>
+                </button>
+                <button class="action-item" onclick="downloadStatement()">
+                    <span class="action-icon">📄</span>
+                    <span>Download Statement</span>
+                </button>
+                <button class="action-item" onclick="contactSupport()">
+                    <span class="action-icon">📞</span>
+                    <span>Contact Support</span>
+                </button>
+                <a href="{{ url_for('transaction_history') }}" class="action-item">
+                    <span class="action-icon">📊</span>
+                    <span>View History</span>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="balance-chart">
+        <h3>Balance Trend</h3>
+        <div class="chart-placeholder">
+            <p>📈 Balance has increased by 12.5% this month</p>
+            <div class="trend-indicators">
+                <div class="trend-item positive">
+                    <span>Income:</span>
+                    <span>+$3,500.00</span>
+                </div>
+                <div class="trend-item negative">
+                    <span>Expenses:</span>
+                    <span>-$1,246.83</span>
+                </div>
+                <div class="trend-item positive">
+                    <span>Net Change:</span>
+                    <span>+$2,253.17</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showTransferModal() {
+    alert('Transfer functionality would be available in the full version.');
+}
+
+function downloadStatement() {
+    alert('Statement download would be available in the full version.');
+}
+
+function contactSupport() {
+    alert('Support contact: 1-800-SECURE-1 or support@securebank.com');
+}
+</script>
+{% endblock %}

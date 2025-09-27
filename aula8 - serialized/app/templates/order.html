@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block title %}Order Confirmation - FreshMart{% endblock %}
+
+{% block content %}
+<div class="order-confirmation">
+    <div class="confirmation-header">
+        <div class="success-icon">✅</div>
+        <h2>Order Confirmed!</h2>
+        <p>Thank you for your order. We're preparing your items now.</p>
+    </div>
+    
+    <div class="order-details">
+        <div class="order-info">
+            <h3>Order Information</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <strong>Order ID:</strong>
+                    <span>#{{ order['id'] }}</span>
+                </div>
+                <div class="info-item">
+                    <strong>Date:</strong>
+                    <span>{{ order['date'] }}</span>
+                </div>
+                <div class="info-item">
+                    <strong>Status:</strong>
+                    <span class="status-{{ order['status'].lower() }}">{{ order['status'] }}</span>
+                </div>
+                <div class="info-item">
+                    <strong>Customer:</strong>
+                    <span>{{ order['customer'] }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="order-items">
+            <h3>Items Ordered</h3>
+            <div class="items-list">
+                {% for item in order['items'] %}
+                <div class="order-item">
+                    <div class="item-info">
+                        <div class="item-name">{{ item.product_name }}</div>
+                        <div class="item-details">
+                            <span class="item-price">${{ "%.2f"|format(item.price) }}</span>
+                        </div>
+                    </div>
+                    <div class="item-quantity">
+                        <span>Qty: {{ item.quantity }}</span>
+                    </div>
+                    <div class="item-subtotal">
+                        <span>${{ "%.2f"|format(item.total) }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="order-summary">
+            <div class="summary-row total">
+                <span><strong>Total:</strong></span>
+                <span><strong>${{ "%.2f"|format(order['total']) }}</strong></span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="order-actions">
+        <a href="{{ url_for('shop') }}" class="btn btn-primary">Continue Shopping</a>
+        <a href="{{ url_for('order_history') }}" class="btn btn-secondary">View Order History</a>
+    </div>
+</div>
+
+<style>
+.order-confirmation {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    color: #333;
+}
+
+.confirmation-header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    color: #333;
+}
+
+.success-icon {
+    font-size: 48px;
+    margin-bottom: 10px;
+}
+
+.confirmation-header h2 {
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.confirmation-header p {
+    color: #666;
+}
+
+.order-details {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    color: #333;
+}
+
+.order-info h3,
+.order-items h3 {
+    margin-bottom: 15px;
+    color: #333;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 10px;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 4px;
+    color: #333;
+}
+
+.info-item strong {
+    color: #495057;
+}
+
+.info-item span {
+    color: #333;
+}
+
+.status-confirmed {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.status-pending {
+    color: #ffc107;
+    font-weight: bold;
+}
+
+.status-processing {
+    color: #007bff;
+    font-weight: bold;
+}
+
+.items-list {
+    margin-bottom: 30px;
+}
+
+.order-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    background: white;
+}
+
+.item-info {
+    flex: 1;
+}
+
+.item-name {
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+.item-details {
+    color: #666;
+    font-size: 0.9em;
+}
+
+.item-category {
+    margin-right: 15px;
+    color: #666;
+}
+
+.item-price {
+    color: #333;
+}
+
+.item-quantity {
+    margin: 0 20px;
+    font-weight: bold;
+    color: #333;
+}
+
+.item-subtotal {
+    font-weight: bold;
+    color: #28a745;
+}
+
+.order-summary {
+    border-top: 2px solid #eee;
+    padding-top: 20px;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding: 5px 0;
+    color: #333;
+}
+
+.summary-row.total {
+    border-top: 2px solid #eee;
+    padding-top: 15px;
+    margin-top: 15px;
+    font-size: 1.1em;
+    color: #333;
+}
+
+.order-actions {
+    text-align: center;
+    margin-top: 30px;
+}
+
+.order-actions .btn {
+    margin: 0 10px;
+    padding: 12px 24px;
+    text-decoration: none;
+    border-radius: 4px;
+    font-weight: bold;
+    display: inline-block;
+}
+
+.btn-primary {
+    background: #007bff;
+    color: white !important;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white !important;
+}
+
+.btn:hover {
+    opacity: 0.9;
+}
+</style>
+{% endblock %}

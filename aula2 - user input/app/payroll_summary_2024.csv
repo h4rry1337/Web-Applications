@@ -1,0 +1,12 @@
+Employee_ID,Employee_Name,Department,Position,Base_Salary,Bonus,Overtime,Total_Compensation,Tax_Withheld,Net_Pay
+EMP001,John Smith,Finance,CFO,85000.00,12000.00,0.00,97000.00,24250.00,72750.00
+EMP002,Sarah Johnson,Accounting,Senior Accountant,65000.00,5000.00,1200.00,71200.00,17800.00,53400.00
+EMP003,Michael Brown,IT,System Administrator,58000.00,3000.00,800.00,61800.00,15450.00,46350.00
+EMP004,Lisa Wilson,HR,HR Manager,62000.00,4000.00,0.00,66000.00,16500.00,49500.00
+EMP005,David Miller,Sales,Sales Manager,70000.00,8000.00,600.00,78600.00,19650.00,58950.00
+EMP006,Jennifer Davis,Accounting,Junior Accountant,45000.00,2000.00,1500.00,48500.00,12125.00,36375.00
+EMP007,Robert Garcia,IT,Developer,55000.00,3500.00,2000.00,60500.00,15125.00,45375.00
+EMP008,Maria Rodriguez,Admin,Executive Assistant,42000.00,1500.00,800.00,44300.00,11075.00,33225.00
+EMP009,James Anderson,Finance,Financial Analyst,52000.00,3000.00,400.00,55400.00,13850.00,41550.00
+EMP010,Amanda Taylor,Marketing,Marketing Coordinator,48000.00,2500.00,600.00,51100.00,12775.00,38325.00
+TOTAL,All Employees,,,582000.00,43500.00,7900.00,633400.00,158600.00,474800.00

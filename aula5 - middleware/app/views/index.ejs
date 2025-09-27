@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Management System</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1>📚 Central Library Management</h1>
+            <nav>
+                <% if (user) { %>
+                    <a href="/dashboard">Dashboard</a>
+                    <a href="/books">Browse Books</a>
+                    <% if (user.role === 'admin') { %>
+                        <a href="/admin">Administration</a>
+                    <% } %>
+                    <a href="/logout">Logout (<%=user.username%>)</a>
+                <% } else { %>
+                    <a href="/login">Login</a>
+                <% } %>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <div class="hero">
+                <h2>Welcome to Central Library</h2>
+                <p>Your gateway to knowledge and literature. Manage your book loans, discover new titles, and explore our extensive collection.</p>
+                
+                <% if (!user) { %>
+                    <div class="cta">
+                        <a href="/login" class="btn btn-primary">Access Your Account</a>
+                    </div>
+                <% } %>
+            </div>
+
+            <div class="features">
+                <div class="feature-card">
+                    <h3>📖 Extensive Collection</h3>
+                    <p>Browse through thousands of books across multiple categories including fiction, science, history, and more.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>💻 Digital Management</h3>
+                    <p>Manage your loans online, check due dates, and renew books from the comfort of your home.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🔍 Easy Search</h3>
+                    <p>Find books by title, author, category, or ISBN with our advanced search functionality.</p>
+                </div>
+            </div>
+
+            <% if (user) { %>
+                <div class="user-section">
+                    <h3>Quick Actions</h3>
+                    <div class="quick-actions">
+                        <a href="/dashboard" class="action-btn">View My Loans</a>
+                        <a href="/books" class="action-btn">Browse Catalog</a>
+                        <% if (user.role === 'admin') { %>
+                            <a href="/admin" class="action-btn admin">Admin Panel</a>
+                        <% } %>
+                    </div>
+                </div>
+            <% } %>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Central Library Management System. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+</html>

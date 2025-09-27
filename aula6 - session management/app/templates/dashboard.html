@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - SecureBank{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <h1>Dashboard</h1>
+    
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <h3>Welcome, {{ user.username }}!</h3>
+                <p>Account ID: {{ user.id }}</p>
+                <p>Account created: {{ user.created_at.strftime('%Y-%m-%d') if user.created_at else 'N/A' }}</p>
+            </div>
+        </div>
+        
+        <div class="col">
+            <div class="card">
+                <h3>Quick Actions</h3>
+                <div class="actions">
+                    <a href="/balance" class="btn btn-primary">View Balance</a>
+                    <a href="/transactions" class="btn btn-secondary">View Transactions</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <h3>Security Information</h3>
+                <p>Last login: Just now</p>
+                <p>Login method: Username/Password</p>
+            </div>
+        </div>
+        
+        <div class="col">
+            <div class="card">
+                <h3>Account Status</h3>
+                <p class="status-active">Account Active</p>
+                <p>Security level: Standard</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+    .debug-info {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+        border: 2px solid #ffc107;
+        margin-top: 20px;
+    }
+    
+    .debug-info h3 {
+        color: #856404;
+        margin-bottom: 15px;
+    }
+    
+    .debug-info p {
+        margin-bottom: 8px;
+        color: #856404;
+    }
+    
+    .debug-info code {
+        font-size: 12px;
+        font-family: 'Courier New', monospace;
+    }
+    
+    .debug-info details summary {
+        margin-bottom: 10px;
+    }
+    
+    .debug-info ul {
+        margin-left: 20px;
+        color: #856404;
+    }
+    
+    .debug-info li {
+        margin-bottom: 5px;
+    }
+</style>
+{% endblock %}

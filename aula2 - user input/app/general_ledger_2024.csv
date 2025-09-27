@@ -1,0 +1,16 @@
+Date,Account,Description,Debit,Credit,Balance
+2024-01-01,1001,Cash Opening Balance,50000.00,,50000.00
+2024-01-02,1002,Accounts Receivable,25000.00,,25000.00
+2024-01-03,1003,Office Equipment Purchase,15000.00,,15000.00
+2024-01-05,2001,Accounts Payable,,10000.00,-10000.00
+2024-01-08,3001,Sales Revenue,,45000.00,-45000.00
+2024-01-10,4001,Office Rent Expense,3000.00,,3000.00
+2024-01-12,4002,Utilities Expense,850.00,,850.00
+2024-01-15,1001,Customer Payment Received,8000.00,,8000.00
+2024-01-18,4003,Marketing Expense,2500.00,,2500.00
+2024-01-20,3001,Consulting Revenue,,12000.00,-12000.00
+2024-01-22,4004,Insurance Expense,1200.00,,1200.00
+2024-01-25,1004,Inventory Purchase,18000.00,,18000.00
+2024-01-28,4005,Employee Salaries,15000.00,,15000.00
+2024-01-30,1001,Bank Interest Received,150.00,,150.00
+2024-01-31,4006,Depreciation Expense,2000.00,,2000.00

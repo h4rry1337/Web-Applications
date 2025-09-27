@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinanceHub - Corporate Accounting Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="header">
+        <h1>FinanceHub</h1>
+        <p>Corporate Financial Reporting System</p>
+    </div>
+
+    <div class="container">
+        <div class="dashboard-intro">
+            <h2>Financial Reports Dashboard</h2>
+            <p>Access your organization's key financial reports and data analytics. Select a report below to view detailed information.</p>
+        </div>
+
+        <div class="reports-grid">
+            <div class="report-card" onclick="loadReport('general_ledger_2024.csv')">
+                <div class="card-icon">📊</div>
+                <h3>General Ledger</h3>
+                <p>Complete transaction history and account balances for 2024</p>
+                <div class="card-footer">
+                    <span class="report-type">Accounting</span>
+                    <span class="last-updated">Updated: Jan 2025</span>
+                </div>
+            </div>
+
+            <div class="report-card" onclick="loadReport('profit_loss_statement.csv')">
+                <div class="card-icon">💰</div>
+                <h3>Profit & Loss Statement</h3>
+                <p>Quarterly and monthly revenue, expenses, and net income analysis</p>
+                <div class="card-footer">
+                    <span class="report-type">Financial</span>
+                    <span class="last-updated">Updated: Dec 2024</span>
+                </div>
+            </div>
+
+            <div class="report-card" onclick="loadReport('balance_sheet_2024.csv')">
+                <div class="card-icon">⚖️</div>
+                <h3>Balance Sheet</h3>
+                <p>Assets, liabilities, and equity overview for fiscal year 2024</p>
+                <div class="card-footer">
+                    <span class="report-type">Financial</span>
+                    <span class="last-updated">Updated: Dec 2024</span>
+                </div>
+            </div>
+
+            <div class="report-card" onclick="loadReport('payroll_summary_2024.csv')">
+                <div class="card-icon">👥</div>
+                <h3>Payroll Summary</h3>
+                <p>Employee compensation, taxes, and payroll analytics</p>
+                <div class="card-footer">
+                    <span class="report-type">HR Finance</span>
+                    <span class="last-updated">Updated: Dec 2024</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="report-viewer" style="display: none;">
+            <div class="report-header">
+                <h3 id="report-title">Report Viewer</h3>
+                <div class="report-actions">
+                    <button onclick="downloadReport()" class="download-btn" id="download-btn">📥 Download CSV</button>
+                    <button onclick="closeReport()" class="close-btn">Close Report</button>
+                </div>
+            </div>
+            <div id="report-content" class="report-content"></div>
+        </div>
+
+        <div class="system-info">
+            <h3>System Information</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <strong>Database:</strong> PostgreSQL 13.4
+                </div>
+                <div class="info-item">
+                    <strong>Last Backup:</strong> January 5, 2025
+                </div>
+                <div class="info-item">
+                    <strong>Data Retention:</strong> 7 Years
+                </div>
+                <div class="info-item">
+                    <strong>Compliance:</strong> SOX, GAAP
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

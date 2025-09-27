@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browse Books - Library Management</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1>📚 Central Library Management</h1>
+            <nav>
+                <a href="/">Home</a>
+                <a href="/dashboard">Dashboard</a>
+                <a href="/books" class="active">Browse Books</a>
+                <% if (user.role === 'admin') { %>
+                    <a href="/admin">Administration</a>
+                <% } %>
+                <a href="/logout">Logout (<%=user.username%>)</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <h2>Available Books</h2>
+            
+            <% if (error) { %>
+                <div class="error"><%=error%></div>
+            <% } %>
+
+            <div class="books-grid">
+                <% books.forEach(book => { %>
+                    <div class="book-card">
+                        <div class="book-info">
+                            <h3><%=book.title%></h3>
+                            <p class="author">by <%=book.author%></p>
+                            <p class="category"><%=book.category%></p>
+                            <p class="year">Published: <%=book.publication_year%></p>
+                            <p class="isbn">ISBN: <%=book.isbn%></p>
+                            <div class="availability">
+                                <span class="available"><%=book.available_copies%> available</span>
+                                <span class="total">of <%=book.total_copies%> total</span>
+                            </div>
+                        </div>
+                        <div class="book-actions">
+                            <% if (book.available_copies > 0) { %>
+                                <button class="btn btn-primary" onclick="borrowBook(<%=book.id%>)">
+                                    Borrow Book
+                                </button>
+                            <% } else { %>
+                                <button class="btn btn-disabled" disabled>
+                                    Not Available
+                                </button>
+                            <% } %>
+                        </div>
+                    </div>
+                <% }); %>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Central Library Management System</p>
+        </div>
+    </footer>
+
+    <script>
+        async function borrowBook(bookId) {
+            try {
+                const response = await fetch('/borrow', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ bookId: bookId })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Book borrowed successfully! Check your dashboard for details.');
+                    location.reload();
+                } else {
+                    alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                alert('An error occurred while borrowing the book.');
+            }
+        }
+    </script>
+</body>
+</html>

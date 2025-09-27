@@ -1,0 +1,508 @@
+<%- include('header') %>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="fas fa-chart-bar me-2"></i>Support Reports & Analytics
+    </h2>
+    <div class="btn-group">
+        <button class="btn btn-outline-primary active" data-period="7">Last 7 Days</button>
+        <button class="btn btn-outline-primary" data-period="30">Last 30 Days</button>
+        <button class="btn btn-outline-primary" data-period="90">Last 90 Days</button>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card bg-gradient-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6>Total Tickets</h6>
+                        <h2><%= Object.values(reportData.ticketsByStatus).reduce((a, b) => a + b, 0) %></h2>
+                        <small>All time</small>
+                    </div>
+                    <i class="fas fa-ticket-alt fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-gradient-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6>Resolved</h6>
+                        <h2><%= reportData.ticketsByStatus.Resolved || 0 %></h2>
+                        <small>Resolution rate: <%= Math.round(((reportData.ticketsByStatus.Resolved || 0) / Object.values(reportData.ticketsByStatus).reduce((a, b) => a + b, 0)) * 100) %>%</small>
+                    </div>
+                    <i class="fas fa-check-circle fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-gradient-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6>In Progress</h6>
+                        <h2><%= reportData.ticketsByStatus['In Progress'] || 0 %></h2>
+                        <small>Active workload</small>
+                    </div>
+                    <i class="fas fa-clock fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-gradient-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6>Avg Response</h6>
+                        <h2>24<small>min</small></h2>
+                        <small>First response time</small>
+                    </div>
+                    <i class="fas fa-tachometer-alt fa-2x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-line me-2"></i>Daily Ticket Volume
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="dailyChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-pie me-2"></i>Tickets by Status
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="statusChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-tags me-2"></i>Tickets by Category
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th class="text-end">Count</th>
+                                <th class="text-end">Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% 
+                            const totalTickets = Object.values(reportData.ticketsByCategory).reduce((a, b) => a + b, 0);
+                            Object.entries(reportData.ticketsByCategory).forEach(([category, count]) => { 
+                            %>
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-light text-dark"><%= category %></span>
+                                    </td>
+                                    <td class="text-end"><%= count %></td>
+                                    <td class="text-end"><%= Math.round((count / totalTickets) * 100) %>%</td>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Tickets by Priority
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Priority</th>
+                                <th class="text-end">Count</th>
+                                <th class="text-end">Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% 
+                            const totalPriorityTickets = Object.values(reportData.ticketsByPriority).reduce((a, b) => a + b, 0);
+                            Object.entries(reportData.ticketsByPriority).forEach(([priority, count]) => { 
+                            %>
+                                <tr>
+                                    <td>
+                                        <% if (priority === 'High') { %>
+                                            <span class="badge bg-danger">High</span>
+                                        <% } else if (priority === 'Medium') { %>
+                                            <span class="badge bg-warning">Medium</span>
+                                        <% } else { %>
+                                            <span class="badge bg-info">Low</span>
+                                        <% } %>
+                                    </td>
+                                    <td class="text-end"><%= count %></td>
+                                    <td class="text-end"><%= Math.round((count / totalPriorityTickets) * 100) %>%</td>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-clock me-2"></i>Performance Metrics
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-6">
+                        <div class="text-center p-3 bg-light rounded">
+                            <h4 class="text-primary">1.2h</h4>
+                            <small class="text-muted">Avg Resolution Time</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-center p-3 bg-light rounded">
+                            <h4 class="text-success">98.5%</h4>
+                            <small class="text-muted">Customer Satisfaction</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-center p-3 bg-light rounded">
+                            <h4 class="text-info">15min</h4>
+                            <small class="text-muted">First Response</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-center p-3 bg-light rounded">
+                            <h4 class="text-warning">2.1</h4>
+                            <small class="text-muted">Avg Interactions</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-users me-2"></i>Support Team Performance
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Agent</th>
+                                <th class="text-end">Assigned</th>
+                                <th class="text-end">Resolved</th>
+                                <th class="text-end">Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <i class="fas fa-user me-1"></i>tech.support
+                                </td>
+                                <td class="text-end">15</td>
+                                <td class="text-end">12</td>
+                                <td class="text-end">
+                                    <span class="badge bg-success">80%</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <i class="fas fa-user me-1"></i>sarah.admin
+                                </td>
+                                <td class="text-end">8</td>
+                                <td class="text-end">7</td>
+                                <td class="text-end">
+                                    <span class="badge bg-success">87.5%</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-download me-2"></i>Export Reports
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text text-white">
+                    Generate detailed reports for management review. Reports include ticket analysis, 
+                    performance metrics, and trend analysis over selected time periods.
+                </p>
+                <small class="text-white">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Reports are generated in real-time and include data up to <%= moment().format('MMMM DD, YYYY [at] HH:mm') %>.
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-globe me-2"></i>Custom Analytics
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-white">Generate custom analytics reports with international date formatting support.</p>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <form id="analyticsForm">
+                            <div class="mb-3">
+                                <label for="localeSelect" class="form-label">Locale Settings</label>
+                                <select class="form-select" id="localeSelect" name="locale">
+                                    <option value="en">English (en)</option>
+                                    <option value="pt">Portuguese (pt)</option>
+                                    <option value="es">Spanish (es)</option>
+                                    <option value="fr">French (fr)</option>
+                                    <option value="de">German (de)</option>
+                                </select>
+                            </div>
+                    
+                            <div class="mb-3">
+                                <label for="dateRange" class="form-label">Date Range</label>
+                                <select class="form-select" id="dateRange" name="range">
+                                    <option value="7d">Last 7 days</option>
+                                    <option value="30d">Last 30 days</option>
+                                    <option value="90d">Last 90 days</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="timezone" class="form-label">Timezone</label>
+                                <select class="form-select" id="timezone" name="timezone">
+                                    <option value="America/New_York">America/New_York</option>
+                                    <option value="Europe/London">Europe/London</option>
+                                    <option value="Asia/Tokyo">Asia/Tokyo</option>
+                                </select>
+                            </div>
+                            
+                            
+                        </form>
+                    </div>
+                    
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Date Format Preview Section -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-globe me-2"></i>Date Format Preview
+                </h5>
+                <small class="text-muted">Preview how dates appear in different locales</small>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label for="previewLocale" class="form-label">Select Locale</label>
+                        <select class="form-select" id="previewLocale" onchange="previewDateFormats()">
+                            <option value="en">English (en)</option>
+                            <option value="pt">Portuguese (pt)</option>
+                            <option value="es">Spanish (es)</option>
+                            <option value="fr">French (fr)</option>
+                            <option value="de">German (de)</option>
+                            <option value="it">Italian (it)</option>
+                            <option value="ja">Japanese (ja)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label">Preview Results</label>
+                        <div id="datePreviewResults" class="border rounded p-3 bg-light text-dark">
+                            <p class="text-muted mb-0">Select a locale to preview date formats</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Daily Chart
+    const dailyCtx = document.getElementById('dailyChart').getContext('2d');
+    const dailyData = <%- JSON.stringify(reportData.dailyStats) %>;
+    
+    new Chart(dailyCtx, {
+        type: 'line',
+        data: {
+            labels: dailyData.map(d => moment(d.date).format('MMM DD')),
+            datasets: [{
+                label: 'Tickets Created',
+                data: dailyData.map(d => d.count),
+                borderColor: 'rgb(54, 162, 235)',
+                backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+    
+    // Status Chart
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    const statusData = <%- JSON.stringify(reportData.ticketsByStatus) %>;
+    
+    new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(statusData),
+            datasets: [{
+                data: Object.values(statusData),
+                backgroundColor: [
+                    '#ffc107',
+                    '#0d6efd',
+                    '#198754',
+                    '#6c757d'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+    
+    // Period buttons
+    const periodButtons = document.querySelectorAll('[data-period]');
+    periodButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            periodButtons.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            console.log('Loading data for period:', this.getAttribute('data-period'));
+        });
+    });
+});
+
+
+// Function to preview date formats
+async function previewDateFormats() {
+    const locale = document.getElementById('previewLocale').value;
+    const resultsDiv = document.getElementById('datePreviewResults');
+    
+    try {
+        resultsDiv.innerHTML = '<p class="text-muted mb-0"><i class="fas fa-spinner fa-spin me-2"></i>Loading preview...</p>';
+        
+        const response = await fetch(`/admin/date-preview?locale=${locale}`);
+        const data = await response.json();
+        
+        if (data.error) {
+            resultsDiv.innerHTML = `<p class="text-danger mb-0">Error: ${data.message}</p>`;
+            return;
+        }
+        
+        let html = `
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Date Examples:</h6>
+                    <ul class="list-unstyled">
+        `;
+        
+        data.examples.forEach(example => {
+            html += `
+                <li><strong>Now:</strong> ${example.localized}</li>
+                <li><strong>Relative:</strong> ${example.relative}</li>
+            `;
+        });
+        
+        html += `
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6>Format Configuration:</h6>
+                    <small class="text-muted">Source: ${data.formats.source}</small>
+                    <pre class="bg-dark text-light p-2 rounded mt-2" style="font-size: 0.8rem; max-height: 200px; overflow-y: auto;">${data.formats.fullFile}</pre>
+                </div>
+            </div>
+        `;
+        
+        resultsDiv.innerHTML = html;
+        
+    } catch (error) {
+        resultsDiv.innerHTML = `<p class="text-danger mb-0">Network error: ${error.message}</p>`;
+    }
+}
+</script>
+
+<%- include('footer') %>

@@ -1,0 +1,12 @@
+[2024-01-15 10:30:55] ERROR: Database connection failed - Connection refused
+[2024-01-15 10:31:02] ERROR: Retry attempt 1 failed
+[2024-01-15 10:31:10] ERROR: Retry attempt 2 failed
+[2024-01-15 10:31:15] INFO: Database connection restored
+[2024-01-15 11:30:55] ERROR: Failed to send notification email - SMTP server unreachable
+[2024-01-15 11:31:10] ERROR: Email queue backup failed
+[2024-01-15 11:45:22] ERROR: Invalid ticket ID provided - ID: abc123
+[2024-01-15 12:15:30] ERROR: Authentication failed - Invalid credentials
+[2024-01-15 12:15:35] ERROR: Multiple failed login attempts detected from IP: 192.168.1.100
+[2024-01-15 12:20:45] ERROR: File upload failed - File size exceeds limit
+[2024-01-15 13:00:12] ERROR: Memory allocation failed - Out of memory
+[2024-01-15 13:05:22] ERROR: Database query timeout - Query took 30+ seconds

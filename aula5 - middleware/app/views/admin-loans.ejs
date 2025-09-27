@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loan Management - Library Administration</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1>📚 Central Library Management</h1>
+            <nav>
+                <a href="/">Home</a>
+                <a href="/dashboard">Dashboard</a>
+                <a href="/books">Browse Books</a>
+                <a href="/admin">Administration</a>
+                <a href="/logout">Logout (<%=user.username%>)</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <div class="admin-breadcrumb">
+                <a href="/admin">Administration</a> → Loan Management
+            </div>
+
+            <h2>📄 Loan Management</h2>
+            
+            <% if (error) { %>
+                <div class="error"><%=error%></div>
+            <% } %>
+
+            <div class="table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Loan ID</th>
+                            <th>User</th>
+                            <th>Book</th>
+                            <th>Author</th>
+                            <th>Loan Date</th>
+                            <th>Due Date</th>
+                            <th>Return Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% loans.forEach(loan => { %>
+                            <tr class="<%=loan.status%>">
+                                <td><%=loan.id%></td>
+                                <td><%=loan.username%></td>
+                                <td><%=loan.title%></td>
+                                <td><%=loan.author%></td>
+                                <td><%=new Date(loan.loan_date).toLocaleDateString()%></td>
+                                <td><%=new Date(loan.due_date).toLocaleDateString()%></td>
+                                <td>
+                                    <% if (loan.return_date) { %>
+                                        <%=new Date(loan.return_date).toLocaleDateString()%>
+                                    <% } else { %>
+                                        <span class="not-returned">Not returned</span>
+                                    <% } %>
+                                </td>
+                                <td class="status-<%=loan.status%>"><%=loan.status.toUpperCase()%></td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Central Library Management System</p>
+        </div>
+    </footer>
+
+    <style>
+        .not-returned {
+            color: #e74c3c;
+            font-style: italic;
+        }
+        
+        tr.overdue {
+            background-color: #fdf2f2;
+        }
+        
+        .status-returned {
+            color: #27ae60;
+            font-weight: 500;
+        }
+    </style>
+</body>
+</html>

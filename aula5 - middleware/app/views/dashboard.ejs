@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Library Management</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1>📚 Central Library Management</h1>
+            <nav>
+                <a href="/">Home</a>
+                <a href="/dashboard" class="active">Dashboard</a>
+                <a href="/books">Browse Books</a>
+                <% if (user.role === 'admin') { %>
+                    <a href="/admin">Administration</a>
+                <% } %>
+                <a href="/logout">Logout (<%=user.username%>)</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <h2>Welcome, <%=user.username%>!</h2>
+            
+            <div class="dashboard-stats">
+                <div class="stat-card">
+                    <h3>My Active Loans</h3>
+                    <div class="stat-number"><%=loans.filter(l => l.status === 'active').length%></div>
+                </div>
+                <div class="stat-card overdue">
+                    <h3>Overdue Books</h3>
+                    <div class="stat-number"><%=loans.filter(l => l.status === 'overdue').length%></div>
+                </div>
+            </div>
+
+            <% if (error) { %>
+                <div class="error"><%=error%></div>
+            <% } %>
+
+            <div class="loans-section">
+                <h3>Current Loans</h3>
+                
+                <% if (loans.length > 0) { %>
+                    <div class="table-container">
+                        <table class="loans-table">
+                            <thead>
+                                <tr>
+                                    <th>Book Title</th>
+                                    <th>Author</th>
+                                    <th>Loan Date</th>
+                                    <th>Due Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% loans.forEach(loan => { %>
+                                    <tr class="<%=loan.status%>">
+                                        <td><%=loan.title%></td>
+                                        <td><%=loan.author%></td>
+                                        <td><%=new Date(loan.loan_date).toLocaleDateString()%></td>
+                                        <td><%=new Date(loan.due_date).toLocaleDateString()%></td>
+                                        <td class="status-<%=loan.status%>"><%=loan.status.toUpperCase()%></td>
+                                    </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                <% } else { %>
+                    <div class="no-data">
+                        <p>You have no active loans.</p>
+                        <a href="/books" class="btn btn-primary">Browse Books</a>
+                    </div>
+                <% } %>
+            </div>
+
+            <div class="quick-actions">
+                <h3>Quick Actions</h3>
+                <a href="/books" class="btn btn-secondary">Browse Available Books</a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Central Library Management System</p>
+        </div>
+    </footer>
+</body>
+</html>

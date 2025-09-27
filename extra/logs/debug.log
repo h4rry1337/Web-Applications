@@ -1,0 +1,15 @@
+[2024-01-15 10:30:15] DEBUG: Initializing application modules
+[2024-01-15 10:30:16] DEBUG: Loading session middleware
+[2024-01-15 10:30:16] DEBUG: Configuring authentication routes
+[2024-01-15 10:30:17] DEBUG: Setting up ticket management endpoints
+[2024-01-15 10:31:22] DEBUG: User session created - Session ID: sess_abc123def456
+[2024-01-15 10:32:45] DEBUG: Ticket validation passed - All required fields present
+[2024-01-15 10:32:46] DEBUG: Generating ticket ID - Using timestamp + random
+[2024-01-15 10:35:12] DEBUG: Memory usage check - Current: 512MB, Max: 1024MB
+[2024-01-15 10:38:30] DEBUG: Ticket status update - From: Open, To: In Progress
+[2024-01-15 10:42:18] DEBUG: Session cleanup initiated
+[2024-01-15 11:15:22] DEBUG: Authentication middleware executed
+[2024-01-15 11:16:45] DEBUG: File upload validation - Size: 2.3MB, Type: image/png
+[2024-01-15 11:20:33] DEBUG: Knowledge base search query - Term: "password reset"
+[2024-01-15 11:25:10] DEBUG: Email notification queued - Recipient: user@company.com
+[2024-01-15 12:00:00] DEBUG: Report generation started - Type: Daily Summary

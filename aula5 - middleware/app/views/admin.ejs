@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administration - Library Management</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1>📚 Central Library Management</h1>
+            <nav>
+                <a href="/">Home</a>
+                <a href="/dashboard">Dashboard</a>
+                <a href="/books">Browse Books</a>
+                <a href="/admin" class="active">Administration</a>
+                <a href="/logout">Logout (<%=user.username%>)</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <div class="admin-header">
+                <h2>📊 Administration Panel</h2>
+                <p>System overview and management tools</p>
+            </div>
+
+            <div class="admin-stats">
+                <div class="stat-card">
+                    <h3>Total Books</h3>
+                    <div class="stat-number"><%=stats.totalBooks || 0%></div>
+                </div>
+                <div class="stat-card">
+                    <h3>Registered Users</h3>
+                    <div class="stat-number"><%=stats.totalUsers || 0%></div>
+                </div>
+                <div class="stat-card">
+                    <h3>Active Loans</h3>
+                    <div class="stat-number"><%=stats.activeLoans || 0%></div>
+                </div>
+                <div class="stat-card warning">
+                    <h3>Overdue Loans</h3>
+                    <div class="stat-number"><%=stats.overdueLoans || 0%></div>
+                </div>
+            </div>
+
+            <div class="admin-sections">
+                <div class="admin-section">
+                    <h3>📖 Book Management</h3>
+                    <p>Manage library inventory, add new books, and track availability</p>
+                    <a href="/admin/books" class="btn btn-primary">Manage Books</a>
+                </div>
+
+                <div class="admin-section">
+                    <h3>👥 User Management</h3>
+                    <p>View registered users, manage accounts, and track user activity</p>
+                    <a href="/admin/users" class="btn btn-primary">Manage Users</a>
+                </div>
+
+                <div class="admin-section">
+                    <h3>📄 Loan Management</h3>
+                    <p>Monitor all loans, track due dates, and manage returns</p>
+                    <a href="/admin/loans" class="btn btn-primary">Manage Loans</a>
+                </div>
+
+                <div class="admin-section">
+                    <h3>⚙️ System Information</h3>
+                    <p>View system status, configuration, and technical details</p>
+                    <button class="btn btn-secondary" onclick="loadSystemInfo()">View System Info</button>
+                </div>
+            </div>
+
+            <div id="system-info" class="system-info" style="display: none;">
+                <h3>System Information</h3>
+                <div id="system-data"></div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Central Library Management System</p>
+        </div>
+    </footer>
+
+    <script>
+        async function loadSystemInfo() {
+            try {
+                const response = await fetch('/api/system-info');
+                const data = await response.json();
+                
+                document.getElementById('system-data').innerHTML = `
+                    <div class="info-grid">
+                        <div><strong>Version:</strong> ${data.version}</div>
+                        <div><strong>Database:</strong> ${data.database}</div>
+                        <div><strong>Environment:</strong> ${data.environment}</div>
+                        <div><strong>Server Time:</strong> ${new Date(data.server_time).toLocaleString()}</div>
+                        <div><strong>Session Secret:</strong> ${data.session_secret}</div>
+                        <div><strong>Admin Users:</strong> ${data.admin_users.map(u => u.username).join(', ')}</div>
+                    </div>
+                `;
+                
+                document.getElementById('system-info').style.display = 'block';
+            } catch (error) {
+                alert('Failed to load system information');
+            }
+        }
+    </script>
+</body>
+</html>

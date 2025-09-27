@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Management - Library Administration</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1>📚 Central Library Management</h1>
+            <nav>
+                <a href="/">Home</a>
+                <a href="/dashboard">Dashboard</a>
+                <a href="/books">Browse Books</a>
+                <a href="/admin">Administration</a>
+                <a href="/logout">Logout (<%=user.username%>)</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <div class="admin-breadcrumb">
+                <a href="/admin">Administration</a> → Book Management
+            </div>
+
+            <h2>📖 Book Management</h2>
+            
+            <% if (error) { %>
+                <div class="error"><%=error%></div>
+            <% } %>
+
+            <div class="admin-section">
+                <h3>Add New Book</h3>
+                <form id="add-book-form" class="book-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="title">Title</label>
+                            <input type="text" id="title" name="title" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="author">Author</label>
+                            <input type="text" id="author" name="author" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="isbn">ISBN</label>
+                            <input type="text" id="isbn" name="isbn" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="category">Category</label>
+                            <input type="text" id="category" name="category" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="total_copies">Total Copies</label>
+                            <input type="number" id="total_copies" name="total_copies" min="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="publication_year">Publication Year</label>
+                            <input type="number" id="publication_year" name="publication_year" min="1000" max="2025" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Book</button>
+                </form>
+            </div>
+
+            <div class="table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Title</th>
+                            <th>Author</th>
+                            <th>Category</th>
+                            <th>ISBN</th>
+                            <th>Available/Total</th>
+                            <th>Year</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% books.forEach(book => { %>
+                            <tr>
+                                <td><%=book.id%></td>
+                                <td><%=book.title%></td>
+                                <td><%=book.author%></td>
+                                <td><%=book.category%></td>
+                                <td><%=book.isbn%></td>
+                                <td><%=book.available_copies%>/<%=book.total_copies%></td>
+                                <td><%=book.publication_year%></td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Central Library Management System</p>
+        </div>
+    </footer>
+
+    <style>
+        .book-form {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+
+    <script>
+        document.getElementById('add-book-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const bookData = Object.fromEntries(formData);
+            
+            try {
+                const response = await fetch('/admin/add-book', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(bookData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Book added successfully!');
+                    location.reload();
+                } else {
+                    alert('Error: ' + result.message);
+                }
+            } catch (error) {
+                alert('An error occurred while adding the book');
+            }
+        });
+    </script>
+</body>
+</html>

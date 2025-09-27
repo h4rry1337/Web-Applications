@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Login - SecureBank Online{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-header">
+            <h2>🏛️ SecureBank Login</h2>
+            <p>Access your account securely</p>
+        </div>
+        
+        {% if error %}
+        <div class="error-message">
+            <strong>Error:</strong> {{ error }}
+        </div>
+        {% endif %}
+        
+        <form method="POST" class="login-form">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required 
+                       placeholder="Enter your username" autocomplete="username">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required 
+                       placeholder="Enter your password" autocomplete="current-password">
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-full">Login to Account</button>
+        </form>
+    
+            
+            <div class="security-notice">
+                <p>🔒 Your connection is secured with 256-bit SSL encryption</p>
+                <p>Need help? Contact us at 1-800-SECURE-1</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,3 @@
+{
+    "flag": "hackingclub{147a8f0ccadd0449e1b9a8ea87a5714b}"
+}
