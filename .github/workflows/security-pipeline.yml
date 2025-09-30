@@ -1,4 +1,4 @@
-name: Security Pipeline Ultra Optimized
+name: Security Pipeline
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   full-scan:
-    name: Full Security Scan (Optimized)
+    name: Full Security Scan
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -32,9 +32,9 @@ jobs:
         run: |
           mkdir -p $HOME/bin
 
-          # Gosec
+          # Gosec (version fixed)
           if [ ! -f $HOME/bin/gosec ]; then
-            curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s -- -b $HOME/bin latest
+            curl -sfL https://raw.githubusercontent.com/securego/gosec/v2.23.0/install.sh | sh -s -- -b $HOME/bin v2.23.0
           fi
 
           # Trivy
