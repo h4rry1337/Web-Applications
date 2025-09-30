@@ -33,14 +33,23 @@ jobs:
             curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b $HOME/bin
           fi
 
-          # Gitleaks (Linux x86_64)
+          # Gitleaks via tar.gz
           if [ ! -f $HOME/gitleaks ]; then
-            curl -sSL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64 -o $HOME/gitleaks
+            curl -sSL -o gitleaks.tar.gz https://github.com/gitleaks/gitleaks/releases/download/v8.28.0/gitleaks_8.28.0_linux_x64.tar.gz
+            tar -xzf gitleaks.tar.gz -C $HOME
             chmod +x $HOME/gitleaks
           fi
 
           # Python packages for Semgrep and TruffleHog
           pip install --user semgrep trufflehog
+
+      - name: Verify binaries
+        run: |
+          $HOME/bin/gosec version
+          $HOME/bin/trivy --version
+          $HOME/gitleaks version
+          $HOME/.local/bin/semgrep --version
+          $HOME/.local/bin/trufflehog --version
 
       - name: Run all scans in parallel
         run: |
