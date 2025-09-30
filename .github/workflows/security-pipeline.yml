@@ -8,7 +8,7 @@ on:
 
 jobs:
   full-scan:
-    name: Full Security Scan
+    name: Full Security Scan with Logs
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -21,11 +21,12 @@ jobs:
 
       - name: Install tools
         run: |
-          # ---- Gosec ----
-          GOSEC_VERSION=2.23.0
-          curl -sfL https://github.com/securego/gosec/releases/download/v${GOSEC_VERSION}/gosec_${GOSEC_VERSION}_linux_amd64.tar.gz -o gosec.tar.gz
-          tar -xzf gosec.tar.gz -C $HOME/bin
-          chmod +x $HOME/bin/gosec
+          # ---- Gosec via build ----
+          sudo apt-get update && sudo apt-get install -y golang
+          git clone --branch v2.23.0 https://github.com/securego/gosec.git
+          cd gosec
+          go build -o $HOME/bin/gosec ./cmd/gosec
+          cd ..
 
           # ---- Trivy ----
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b $HOME/bin
@@ -37,40 +38,48 @@ jobs:
           chmod +x $HOME/gitleaks
 
           # ---- Python packages ----
-          pip install --user semgrep trufflehog
+          python3 -m pip install --user semgrep trufflehog
 
       - name: Verify binaries
         run: |
-          $HOME/bin/gosec version
-          $HOME/bin/trivy --version
-          $HOME/gitleaks version
-          $HOME/.local/bin/semgrep --version
-          $HOME/.local/bin/trufflehog --version
+          echo "### Gosec Version"
+          $HOME/bin/gosec version || true
+          echo "### Trivy Version"
+          $HOME/bin/trivy --version || true
+          echo "### Gitleaks Version"
+          $HOME/gitleaks version || true
+          echo "### Semgrep Version"
+          $HOME/.local/bin/semgrep --version || true
+          echo "### TruffleHog Version"
+          $HOME/.local/bin/trufflehog --version || true
 
-      - name: Run all scans in parallel
+      - name: Run all scans in parallel with logs
         run: |
+          set -o pipefail
+
           # ---- Gosec ----
           if [ -f go.mod ]; then
-            $HOME/bin/gosec ./... -fmt=json -out=reports/gosec-report.json || true &
+            $HOME/bin/gosec ./... -fmt=json -out=reports/gosec-report.json 2>&1 | tee reports/gosec.log &
             GOSEC_PID=$!
           else
             echo "{}" > reports/gosec-report.json
+            echo "No go.mod found, skipping Gosec" > reports/gosec.log
           fi
 
           # ---- Semgrep ----
-          $HOME/.local/bin/semgrep --config=auto --error --json > reports/semgrep-report.json || true &
+          $HOME/.local/bin/semgrep --config=auto --error --json 2>&1 | tee reports/semgrep-report.json reports/semgrep.log &
           SEMGREP_PID=$!
 
           # ---- Trivy ----
-          $HOME/bin/trivy fs --scanners vuln,misconfig --exit-code 0 --format json -o reports/trivy-report.json . &
+          $HOME/bin/trivy fs --scanners vuln,misconfig --exit-code 0 --format json 2>&1 | tee reports/trivy-report.json reports/trivy.log &
           TRIVY_PID=$!
 
           # ---- Gitleaks ----
-          $HOME/gitleaks detect --source=. --report-format=json --report-path reports/gitleaks-report.json --exit-code 0 &
+          $HOME/gitleaks detect --source=. --report-format=json --report-path reports/gitleaks-report.json 2>&1 | tee reports/gitleaks.log &
           GITLEAKS_PID=$!
 
           # ---- TruffleHog ----
-          $HOME/.local/bin/trufflehog filesystem --repo_path . --json > reports/trufflehog-report.json || true &
+          $HOME/.local/bin/trufflehog filesystem --repo_path . --json 2>&1 | tee reports/trufflehog-report.json reports/trufflehog.log &
           TRUFFLEHOG_PID=$!
 
           # ---- Wait for all ----
@@ -85,7 +94,7 @@ jobs:
             [ ! -f reports/$f ] && echo "{}" > reports/$f
           done
 
-      - name: Upload all reports
+      - name: Upload all reports and logs
         uses: actions/upload-artifact@v4
         with:
           name: security-reports
