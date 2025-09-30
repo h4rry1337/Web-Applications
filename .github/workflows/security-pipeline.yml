@@ -1,4 +1,4 @@
-name: Security Pipeline
+name: Security Pipeline Ultra Optimized Final
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   full-scan:
-    name: Full Security Scan
+    name: Full Security Scan (Optimized)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -26,13 +26,13 @@ jobs:
             $HOME/bin/gosec
             $HOME/bin/trivy
             $HOME/gitleaks
-          key: security-tools-cache-v1
+          key: security-tools-cache-v2
 
       - name: Install tools if missing
         run: |
           mkdir -p $HOME/bin
 
-          # Gosec (version fixed)
+          # Gosec (fixed version)
           if [ ! -f $HOME/bin/gosec ]; then
             curl -sfL https://raw.githubusercontent.com/securego/gosec/v2.23.0/install.sh | sh -s -- -b $HOME/bin v2.23.0
           fi
@@ -42,7 +42,7 @@ jobs:
             curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b $HOME/bin
           fi
 
-          # Gitleaks
+          # Gitleaks (Linux x86_64)
           if [ ! -f $HOME/gitleaks ]; then
             curl -sSL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64 -o $HOME/gitleaks
             chmod +x $HOME/gitleaks
@@ -66,7 +66,7 @@ jobs:
           SEMGREP_PID=$!
 
           # Trivy
-          $HOME/bin/trivy fs --security-checks vuln,config --exit-code 0 --format json -o reports/trivy-report.json . &
+          $HOME/bin/trivy fs --scanners vuln,misconfig --exit-code 0 --format json -o reports/trivy-report.json . &
           TRIVY_PID=$!
 
           # Gitleaks
