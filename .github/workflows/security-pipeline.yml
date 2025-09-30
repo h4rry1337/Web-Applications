@@ -1,4 +1,4 @@
-name: Security Pipeline
+name: Security Pipeline Final
 
 on:
   push:
@@ -26,13 +26,13 @@ jobs:
             $HOME/bin/gosec
             $HOME/bin/trivy
             $HOME/gitleaks
-          key: security-tools-cache-v3
+          key: security-tools-cache-v4
 
       - name: Install tools if missing
         run: |
           mkdir -p $HOME/bin
 
-          # Gosec (fixed version)
+          # Gosec
           if [ ! -f $HOME/bin/gosec ]; then
             curl -sfL https://raw.githubusercontent.com/securego/gosec/v2.23.0/install.sh | sh -s -- -b $HOME/bin v2.23.0
           fi
@@ -42,7 +42,7 @@ jobs:
             curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b $HOME/bin
           fi
 
-          # Gitleaks (Linux x86_64, follow redirect)
+          # Gitleaks (Linux x86_64, com redirect)
           if [ ! -f $HOME/gitleaks ]; then
             curl -sSL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64 -o $HOME/gitleaks
             chmod +x $HOME/gitleaks
@@ -77,7 +77,7 @@ jobs:
           $HOME/.local/bin/trufflehog filesystem --repo_path . --json > reports/trufflehog-report.json || true &
           TRUFFLEHOG_PID=$!
 
-          # Wait for all scanners
+          # Wait for all
           [ ! -z "$GOSEC_PID" ] && wait $GOSEC_PID
           wait $SEMGREP_PID
           wait $TRIVY_PID
