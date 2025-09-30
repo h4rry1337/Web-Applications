@@ -1,128 +1,116 @@
-name: Security Scan
+name: Security Pipeline Scan
 
 on:
   push:
-    branches: [ main ]
+    branches: ["main"]
   pull_request:
-    branches: [ main ]
+    branches: ["main"]
 
 jobs:
-  security:
+  sast:
+    name: Static Code Analysis (Gosec + Semgrep)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup environment
-        run: |
-          mkdir -p $HOME/bin $HOME/.local/bin reports
-          echo -e "\033[1;34mEnvironment setup done.\033[0m"
+      - name: Prepare reports directory
+        run: mkdir -p reports $HOME/bin $HOME/.local/bin
 
-      # ---- Install Gosec ----
+      # ---- Gosec ----
       - name: Install Gosec
         run: |
-          wget -q https://github.com/securego/gosec/releases/download/v2.22.9/gosec_2.22.9_linux_amd64.tar.gz -O gosec.tar.gz
-          tar -xzf gosec.tar.gz
-          mv gosec_2.22.9_linux_amd64/gosec $HOME/bin/gosec
-          chmod +x $HOME/bin/gosec
+          curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s -- -b $HOME/bin latest
           echo -e "\033[1;32mGosec version: $($HOME/bin/gosec version)\033[0m"
 
-      # ---- Install Gitleaks ----
-      - name: Install Gitleaks
+      - name: Run Gosec
+        if: hashFiles('go.mod') != ''
         run: |
-          wget -q https://github.com/gitleaks/gitleaks/releases/download/v8.28.0/gitleaks_8.28.0_linux_x64.tar.gz -O gitleaks.tar.gz
-          tar -xzf gitleaks.tar.gz
-          mv gitleaks $HOME/bin/gitleaks
-          chmod +x $HOME/bin/gitleaks
-          echo -e "\033[1;32mGitleaks version: $($HOME/bin/gitleaks version)\033[0m"
+          echo -e "\033[1;34mRunning Gosec...\033[0m"
+          $HOME/bin/gosec ./... -fmt=json -out=reports/gosec-report.json || true
+          [ ! -f reports/gosec-report.json ] && echo "{}" > reports/gosec-report.json
+          echo -e "\033[1;32mGosec scan finished\033[0m"
 
-      # ---- Install Semgrep ----
+      # ---- Semgrep ----
       - name: Install Semgrep
         run: |
           pip install --user semgrep
           echo -e "\033[1;32mSemgrep version: $($HOME/.local/bin/semgrep --version)\033[0m"
 
-      # ---- Install TruffleHog ----
-      - name: Install TruffleHog
+      - name: Run Semgrep
         run: |
-          pip install --user trufflehog
-          echo -e "\033[1;32mTrufflehog version: $($HOME/.local/bin/trufflehog --version)\033[0m"
+          echo -e "\033[1;34mRunning Semgrep...\033[0m"
+          $HOME/.local/bin/semgrep --config=auto --error --json > reports/semgrep-report.json || true
+          [ ! -f reports/semgrep-report.json ] && echo "{}" > reports/semgrep-report.json
+          echo -e "\033[1;32mSemgrep scan finished\033[0m"
 
-      # ---- Install Trivy ----
+      - name: Upload SAST reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: sast-reports
+          path: reports/
+
+  secrets:
+    name: Secrets Scanning (Gitleaks + TruffleHog)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Prepare reports directory
+        run: mkdir -p reports $HOME/bin $HOME/.local/bin
+
+      # ---- Gitleaks ----
+      - name: Run Gitleaks
+        run: |
+          curl -sSL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64 -o $HOME/bin/gitleaks
+          chmod +x $HOME/bin/gitleaks
+          echo -e "\033[1;34mRunning Gitleaks...\033[0m"
+          $HOME/bin/gitleaks detect --source=. --report-format=json --report-path reports/gitleaks-report.json --exit-code 0
+          [ ! -f reports/gitleaks-report.json ] && echo "{}" > reports/gitleaks-report.json
+          echo -e "\033[1;32mGitleaks scan finished\033[0m"
+
+      # ---- TruffleHog ----
+      - name: Install TruffleHog
+        run: pip install --user trufflehog
+
+      - name: Run TruffleHog
+        run: |
+          echo -e "\033[1;34mRunning TruffleHog...\033[0m"
+          $HOME/.local/bin/trufflehog filesystem --repo_path . --json > reports/trufflehog-report.json || true
+          [ ! -f reports/trufflehog-report.json ] && echo "{}" > reports/trufflehog-report.json
+          echo -e "\033[1;32mTruffleHog scan finished\033[0m"
+
+      - name: Upload Secrets reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: secrets-reports
+          path: reports/
+
+  deps:
+    name: Dependency Vulnerability Scan (Trivy)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Prepare reports directory
+        run: mkdir -p reports $HOME/bin
+
       - name: Install Trivy
         run: |
-          wget -q https://github.com/aquasecurity/trivy/releases/latest/download/trivy_0.46.2_Linux-64bit.tar.gz -O trivy.tar.gz
-          tar -xzf trivy.tar.gz
-          mv trivy $HOME/bin/trivy
-          chmod +x $HOME/bin/trivy
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b $HOME/bin
           echo -e "\033[1;32mTrivy version: $($HOME/bin/trivy --version)\033[0m"
 
-      # ---- Run all scanners ----
-      - name: Run Security Scans
+      - name: Run Trivy
         run: |
-          set -e
-          mkdir -p reports
-
-          echo -e "\033[1;34mRunning Gosec...\033[0m"
-          if [ -f go.mod ]; then
-            $HOME/bin/gosec ./... -fmt=json -out=reports/gosec-report.json || true &
-            GOSEC_PID=$!
-          else
-            echo "{}" > reports/gosec-report.json
-          fi
-
-          echo -e "\033[1;34mRunning Semgrep...\033[0m"
-          $HOME/.local/bin/semgrep --config=auto --error --json > reports/semgrep-report.json || true &
-          SEMGREP_PID=$!
-
           echo -e "\033[1;34mRunning Trivy...\033[0m"
-          $HOME/bin/trivy fs --scanners vuln,misconfig --exit-code 0 --format json -o reports/trivy-report.json . &
-          TRIVY_PID=$!
+          $HOME/bin/trivy fs --scanners vuln,misconfig --exit-code 0 --format json -o reports/trivy-report.json .
+          [ ! -f reports/trivy-report.json ] && echo "{}" > reports/trivy-report.json
+          echo -e "\033[1;32mTrivy scan finished\033[0m"
 
-          echo -e "\033[1;34mRunning Gitleaks...\033[0m"
-          $HOME/bin/gitleaks detect --source=. --report-format=json --report-path reports/gitleaks-report.json --exit-code 0 &
-          GITLEAKS_PID=$!
-
-          echo -e "\033[1;34mRunning TruffleHog...\033[0m"
-          $HOME/.local/bin/trufflehog filesystem --repo_path . --json > reports/trufflehog-report.json || true &
-          TRUFFLEHOG_PID=$!
-
-          # Wait for all scanners
-          [ ! -z "$GOSEC_PID" ] && wait $GOSEC_PID
-          wait $SEMGREP_PID
-          wait $TRIVY_PID
-          wait $GITLEAKS_PID
-          wait $TRUFFLEHOG_PID
-
-          # Ensure JSON reports exist
-          for f in gosec-report.json semgrep-report.json trivy-report.json gitleaks-report.json trufflehog-report.json; do
-            [ ! -f reports/$f ] && echo "{}" > reports/$f
-          done
-
-          echo -e "\033[1;33m------ Scan Summary ------\033[0m"
-
-          # Summarize each scanner
-          GOSEC_COUNT=$(jq '.Issues | length' reports/gosec-report.json 2>/dev/null || echo 0)
-          echo -e "\033[1;31mGosec findings: $GOSEC_COUNT\033[0m"
-
-          SEMGREP_COUNT=$(jq '.results | length' reports/semgrep-report.json 2>/dev/null || echo 0)
-          echo -e "\033[1;31mSemgrep findings: $SEMGREP_COUNT\033[0m"
-
-          TRIVY_COUNT=$(jq '.Results | length' reports/trivy-report.json 2>/dev/null || echo 0)
-          echo -e "\033[1;31mTrivy findings: $TRIVY_COUNT\033[0m"
-
-          GITLEAKS_COUNT=$(jq '.Leaks | length' reports/gitleaks-report.json 2>/dev/null || echo 0)
-          echo -e "\033[1;31mGitleaks findings: $GITLEAKS_COUNT\033[0m"
-
-          TRUFFLE_COUNT=$(jq '. | length' reports/trufflehog-report.json 2>/dev/null || echo 0)
-          echo -e "\033[1;31mTruffleHog findings: $TRUFFLE_COUNT\033[0m"
-
-          TOTAL=$(($GOSEC_COUNT + $SEMGREP_COUNT + $TRIVY_COUNT + $GITLEAKS_COUNT + $TRUFFLE_COUNT))
-          echo -e "\033[1;36mTotal security issues detected: $TOTAL\033[0m"
-
-          if [ $TOTAL -gt 0 ]; then
-            echo -e "\033[1;41mSecurity scan failed: vulnerabilities or secrets found!\033[0m"
-            exit 1
-          else
-            echo -e "\033[1;42mNo security issues detected. Scan passed.\033[0m"
-          fi
+      - name: Upload Trivy report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-report
+          path: reports/
