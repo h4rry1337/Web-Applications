@@ -1,4 +1,4 @@
-name: Security Pipeline
+name: Security Pipeline Ultra Optimized
 
 on:
   push:
@@ -7,122 +7,90 @@ on:
     branches: ["main"]
 
 jobs:
-  static-analysis:
-    name: Static Code Analysis (Gosec + Semgrep)
+  full-scan:
+    name: Full Security Scan (Optimized)
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go-version: [1.20, 1.21] # ajuste conforme necessário
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: ${{ matrix.go-version }}
-
       - name: Prepare reports directory
         run: mkdir -p reports
 
-      - name: Run Gosec
+      - name: Cache binaries
+        uses: actions/cache@v4
+        with:
+          path: |
+            $HOME/bin/gosec
+            $HOME/bin/trivy
+            $HOME/gitleaks
+          key: security-tools-cache-v1
+
+      - name: Install tools if missing
         run: |
-          if [ -f go.mod ]; then
+          mkdir -p $HOME/bin
+
+          # Gosec
+          if [ ! -f $HOME/bin/gosec ]; then
             curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s -- -b $HOME/bin latest
-            $HOME/bin/gosec ./... -fmt=json -out=reports/gosec-report.json || true
+          fi
+
+          # Trivy
+          if [ ! -f $HOME/bin/trivy ]; then
+            curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b $HOME/bin
+          fi
+
+          # Gitleaks
+          if [ ! -f $HOME/gitleaks ]; then
+            curl -sSL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64 -o $HOME/gitleaks
+            chmod +x $HOME/gitleaks
+          fi
+
+          # Python packages
+          pip install --user semgrep trufflehog
+
+      - name: Run all scanners in parallel
+        run: |
+          # Gosec
+          if [ -f go.mod ]; then
+            $HOME/bin/gosec ./... -fmt=json -out=reports/gosec-report.json || true &
+            GOSEC_PID=$!
           else
             echo "{}" > reports/gosec-report.json
           fi
 
-      - name: Run Semgrep
-        run: |
-          pip install semgrep
-          semgrep --config=auto --error --json > reports/semgrep-report.json || true
+          # Semgrep
+          $HOME/.local/bin/semgrep --config=auto --error --json > reports/semgrep-report.json || true &
+          SEMGREP_PID=$!
 
-      - name: Upload Gosec report
-        uses: actions/upload-artifact@v4
-        with:
-          name: gosec-report-${{ matrix.go-version }}
-          path: reports/gosec-report.json
+          # Trivy
+          $HOME/bin/trivy fs --security-checks vuln,config --exit-code 0 --format json -o reports/trivy-report.json . &
+          TRIVY_PID=$!
 
-      - name: Upload Semgrep report
-        uses: actions/upload-artifact@v4
-        with:
-          name: semgrep-report-${{ matrix.go-version }}
-          path: reports/semgrep-report.json
-
-  deps:
-    name: Dependency Vulnerability Scan (Trivy)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Prepare reports directory
-        run: mkdir -p reports
-
-      - name: Run Trivy
-        run: |
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b $HOME/bin
-          $HOME/bin/trivy fs --security-checks vuln,config --exit-code 0 --format json -o reports/trivy-report.json .
-
-      - name: Upload Trivy report
-        uses: actions/upload-artifact@v4
-        with:
-          name: trivy-report
-          path: reports/trivy-report.json
-
-  secrets:
-    name: Secrets Scanning (Gitleaks + TruffleHog)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Prepare reports directory
-        run: mkdir -p reports
-
-      - name: Run Gitleaks and TruffleHog in parallel
-        run: |
-          # Run Gitleaks
-          curl -sSL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64 -o gitleaks
-          chmod +x gitleaks
-          ./gitleaks detect --source=. --report-format=json --report-path reports/gitleaks-report.json --exit-code 0 &
+          # Gitleaks
+          $HOME/gitleaks detect --source=. --report-format=json --report-path reports/gitleaks-report.json --exit-code 0 &
           GITLEAKS_PID=$!
 
-          # Run TruffleHog
-          pip install trufflehog
-          trufflehog filesystem . --json > reports/trufflehog-report.json || true &
+          # TruffleHog
+          $HOME/.local/bin/trufflehog filesystem --repo_path . --json > reports/trufflehog-report.json || true &
           TRUFFLEHOG_PID=$!
 
-          # Wait for both
+          # Wait for all
+          [ ! -z "$GOSEC_PID" ] && wait $GOSEC_PID
+          wait $SEMGREP_PID
+          wait $TRIVY_PID
           wait $GITLEAKS_PID
           wait $TRUFFLEHOG_PID
 
           # Ensure JSON files exist
-          [ ! -f reports/gitleaks-report.json ] && echo "{}" > reports/gitleaks-report.json
-          [ ! -f reports/trufflehog-report.json ] && echo "{}" > reports/trufflehog-report.json
+          for f in gosec-report.json semgrep-report.json trivy-report.json gitleaks-report.json trufflehog-report.json; do
+            [ ! -f reports/$f ] && echo "{}" > reports/$f
+          done
 
-          # Display logs
-          echo "Gitleaks report:"
-          cat reports/gitleaks-report.json
-          echo "TruffleHog report:"
-          cat reports/trufflehog-report.json
-
-      - name: Upload Gitleaks report
+      - name: Upload all reports
         uses: actions/upload-artifact@v4
         with:
-          name: gitleaks-report
-          path: reports/gitleaks-report.json
-
-      - name: Upload TruffleHog report
-        uses: actions/upload-artifact@v4
-        with:
-          name: trufflehog-report
-          path: reports/trufflehog-report.json
+          name: security-reports
+          path: reports/
