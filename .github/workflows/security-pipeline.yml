@@ -1,4 +1,4 @@
-name: Security Pipeline Ultra Optimized Final
+name: Security Pipeline
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   full-scan:
-    name: Full Security Scan (Optimized)
+    name: Full Security Scan
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -26,7 +26,7 @@ jobs:
             $HOME/bin/gosec
             $HOME/bin/trivy
             $HOME/gitleaks
-          key: security-tools-cache-v2
+          key: security-tools-cache-v3
 
       - name: Install tools if missing
         run: |
@@ -42,7 +42,7 @@ jobs:
             curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b $HOME/bin
           fi
 
-          # Gitleaks (Linux x86_64)
+          # Gitleaks (Linux x86_64, follow redirect)
           if [ ! -f $HOME/gitleaks ]; then
             curl -sSL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64 -o $HOME/gitleaks
             chmod +x $HOME/gitleaks
@@ -77,7 +77,7 @@ jobs:
           $HOME/.local/bin/trufflehog filesystem --repo_path . --json > reports/trufflehog-report.json || true &
           TRUFFLEHOG_PID=$!
 
-          # Wait for all
+          # Wait for all scanners
           [ ! -z "$GOSEC_PID" ] && wait $GOSEC_PID
           wait $SEMGREP_PID
           wait $TRIVY_PID
