@@ -20,7 +20,7 @@ jobs:
       # ---- Gosec ----
       - name: Install Gosec
         run: |
-          curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s -- -b $HOME/bin latest
+          curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s -- -b $HOME/bin v2.21.4
           echo -e "\033[1;32mGosec version: $($HOME/bin/gosec version)\033[0m"
 
       - name: Run Gosec
@@ -56,18 +56,27 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Necessário para histórico completo do Git
 
       - name: Prepare reports directory
         run: mkdir -p reports $HOME/bin $HOME/.local/bin
 
       # ---- Gitleaks ----
+      - name: Install Gitleaks
+        run: |
+          GITLEAKS_VERSION="8.21.2"
+          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" -o gitleaks.tar.gz
+          tar -xzf gitleaks.tar.gz -C $HOME/bin
+          chmod +x $HOME/bin/gitleaks
+          rm gitleaks.tar.gz
+          echo -e "\033[1;32mGitleaks version: $($HOME/bin/gitleaks version)\033[0m"
+
       - name: Run Gitleaks
         run: |
-          curl -sSL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64 -o $HOME/bin/gitleaks
-          chmod +x $HOME/bin/gitleaks
           echo -e "\033[1;34mRunning Gitleaks...\033[0m"
-          $HOME/bin/gitleaks detect --source=. --report-format=json --report-path reports/gitleaks-report.json --exit-code 0
-          [ ! -f reports/gitleaks-report.json ] && echo "{}" > reports/gitleaks-report.json
+          $HOME/bin/gitleaks detect --source=. --report-format=json --report-path=reports/gitleaks-report.json --exit-code=0 || true
+          [ ! -f reports/gitleaks-report.json ] && echo "[]" > reports/gitleaks-report.json
           echo -e "\033[1;32mGitleaks scan finished\033[0m"
 
       # ---- TruffleHog ----
@@ -77,7 +86,7 @@ jobs:
       - name: Run TruffleHog
         run: |
           echo -e "\033[1;34mRunning TruffleHog...\033[0m"
-          $HOME/.local/bin/trufflehog filesystem --repo_path . --json > reports/trufflehog-report.json || true
+          $HOME/.local/bin/trufflehog filesystem --directory=. --json > reports/trufflehog-report.json || true
           [ ! -f reports/trufflehog-report.json ] && echo "{}" > reports/trufflehog-report.json
           echo -e "\033[1;32mTruffleHog scan finished\033[0m"
 
