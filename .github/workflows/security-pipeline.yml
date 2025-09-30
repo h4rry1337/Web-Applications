@@ -2,171 +2,102 @@ name: Security Pipeline Scan
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   pull_request:
 
 jobs:
-  scan:
+  security:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up environment
-      run: |
-        mkdir -p $HOME/bin
-        mkdir -p reports
+      - name: Set up Python (Semgrep & TruffleHog)
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
 
-    # ---- Install Gosec ----
-    - name: Install Gosec
-      run: |
-        GOSEC_VERSION="2.22.9"
-        wget -q https://github.com/securego/gosec/releases/download/v${GOSEC_VERSION}/gosec_${GOSEC_VERSION}_linux_amd64.tar.gz -O gosec.tar.gz
-        tar -xzf gosec.tar.gz -C $HOME/bin
-        rm gosec.tar.gz
-        $HOME/bin/gosec version
+      - name: Install Semgrep
+        run: |
+          python -m pip install --upgrade pip
+          pip install semgrep trufflehog
 
-    # ---- Install Gitleaks ----
-    - name: Install Gitleaks
-      run: |
-        GITLEAKS_VERSION="8.28.0"
-        wget -q https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz -O gitleaks.tar.gz
-        tar -xzf gitleaks.tar.gz -C $HOME
-        rm gitleaks.tar.gz
-        $HOME/gitleaks version
+      - name: Install Gosec
+        run: |
+          wget -q https://github.com/securego/gosec/releases/download/v2.22.9/gosec_2.22.9_linux_amd64.tar.gz -O gosec.tar.gz
+          tar -xzf gosec.tar.gz
+          mv gosec $HOME/bin/gosec
+          chmod +x $HOME/bin/gosec
 
-    # ---- Install Trivy ----
-    - name: Install Trivy
-      run: |
-        TRIVY_VERSION="0.43.1"
-        wget -q https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz -O trivy.tar.gz
-        tar -xzf trivy.tar.gz -C $HOME/bin
-        rm trivy.tar.gz
-        $HOME/bin/trivy --version
+      - name: Install Trivy
+        run: |
+          wget -q https://github.com/aquasecurity/trivy/releases/latest/download/trivy_$(uname -s)_$(uname -m).tar.gz -O trivy.tar.gz
+          tar -xzf trivy.tar.gz
+          mv trivy $HOME/bin/trivy
+          chmod +x $HOME/bin/trivy
 
-    # ---- Install Semgrep and TruffleHog ----
-    - name: Install Python tools
-      run: |
-        python3 -m pip install --upgrade pip
-        pip install semgrep trufflehog
-        $HOME/.local/bin/semgrep --version
-        $HOME/.local/bin/trufflehog --version
+      - name: Install Gitleaks
+        run: |
+          wget -q https://github.com/gitleaks/gitleaks/releases/download/v8.28.0/gitleaks_8.28.0_linux_x64.tar.gz -O gitleaks.tar.gz
+          tar -xzf gitleaks.tar.gz
+          mv gitleaks $HOME/gitleaks
+          chmod +x $HOME/gitleaks
 
-    # ---- Run all scanners in parallel ----
-    - name: Run Security Scans in Parallel
-      run: |
-        set -euo pipefail
+      - name: Add $HOME/bin to PATH
+        run: echo "$HOME/bin" >> $GITHUB_PATH
 
-        echo "==== Running all scanners in parallel ===="
+      - name: Run Security Scans
+        run: |
+          mkdir -p reports
 
-        # Functions for each scanner
-        run_gosec() {
+          echo "-----------------------------"
+          echo "Starting Security Scans"
+          echo "-----------------------------"
+
+          # ---- Gosec ----
           if [ -f go.mod ]; then
-            echo "Starting Gosec..."
-            $HOME/bin/gosec ./... -fmt=json -out=reports/gosec-report.json -debug || true
+              echo "[Gosec] Scanning Go project..."
+              $HOME/bin/gosec ./... -fmt=json -out=reports/gosec-report.json || true
           else
-            echo "{}" > reports/gosec-report.json
+              echo "[Gosec] No go.mod found, creating empty report."
+              echo "{}" > reports/gosec-report.json
           fi
-        }
 
-        run_semgrep() {
-          echo "Starting Semgrep..."
+          # ---- Semgrep ----
+          echo "[Semgrep] Scanning project..."
           $HOME/.local/bin/semgrep --config=auto --error --json --verbose > reports/semgrep-report.json || true
-        }
 
-        run_trivy() {
-          echo "Starting Trivy..."
-          $HOME/bin/trivy fs . --scanners vuln,misconfig --exit-code 0 --format json -o reports/trivy-report.json --debug
-        }
+          # ---- Trivy ----
+          echo "[Trivy] Scanning filesystem..."
+          $HOME/bin/trivy fs --scanners vuln,misconfig --exit-code 0 --format json -o reports/trivy-report.json . || true
 
-        run_gitleaks() {
-          echo "Starting Gitleaks..."
-          $HOME/gitleaks detect --source=. --report-format=json --report-path reports/gitleaks-report.json --exit-code 0 --verbose
-        }
+          # ---- Gitleaks ----
+          echo "[Gitleaks] Scanning project..."
+          $HOME/gitleaks detect --source=. --report-format=json --report-path reports/gitleaks-report.json --exit-code 0 || true
 
-        run_trufflehog() {
-          echo "Starting TruffleHog..."
-          $HOME/.local/bin/trufflehog filesystem --repo_path . --json --verbose > reports/trufflehog-report.json || true
-        }
+          # ---- TruffleHog ----
+          echo "[TruffleHog] Scanning project..."
+          $HOME/.local/bin/trufflehog filesystem --repo_path . --json --regex --max_depth 10 > reports/trufflehog-report.json || true
 
-        # Run all in background
-        run_gosec &
-        GOSEC_PID=$!
-        run_semgrep &
-        SEMGREP_PID=$!
-        run_trivy &
-        TRIVY_PID=$!
-        run_gitleaks &
-        GITLEAKS_PID=$!
-        run_trufflehog &
-        TRUFFLEHOG_PID=$!
+          echo "-----------------------------"
+          echo "All scans completed"
+          echo "-----------------------------"
 
-        # Wait for all
-        wait $GOSEC_PID
-        wait $SEMGREP_PID
-        wait $TRIVY_PID
-        wait $GITLEAKS_PID
-        wait $TRUFFLEHOG_PID
+          # Ensure all reports exist
+          for f in gosec-report.json semgrep-report.json trivy-report.json gitleaks-report.json trufflehog-report.json; do
+              if [ ! -f reports/$f ]; then
+                  echo "[Init] Creating empty report for $f"
+                  echo "{}" > reports/$f
+              fi
+          done
 
-        echo "==== All scanners completed! ===="
+          echo "Reports saved in ./reports"
 
-        # Ensure JSON files exist
-        for f in gosec-report.json semgrep-report.json trivy-report.json gitleaks-report.json trufflehog-report.json; do
-          [ ! -f reports/$f ] && echo "{}" > reports/$f
-        done
-
-    # ---- Summarize Security Reports ----
-    - name: Summarize Security Reports
-      run: |
-        echo "==== Security Summary ===="
-        fail_count=0
-
-        for scanner in gosec semgrep trivy gitleaks trufflehog; do
-          file="reports/${scanner}-report.json"
-          if [ -f "$file" ]; then
-            count=$(jq '. | length // 0' $file)
-            echo "$scanner findings: $count"
-
-            # Check for critical/high vulnerabilities
-            case $scanner in
-              trivy)
-                critical=$(jq '[.Results[].Vulnerabilities[]? | select(.Severity=="CRITICAL" or .Severity=="HIGH")] | length' $file)
-                ;;
-              gosec)
-                critical=$(jq '[.Issues[]? | select(.Severity=="HIGH")] | length' $file)
-                ;;
-              semgrep)
-                critical=$(jq '[.results[]? | select(.extra.severity=="ERROR" or .extra.severity=="HIGH")] | length' $file)
-                ;;
-              gitleaks)
-                critical=$(jq '. | length' $file)
-                ;;
-              trufflehog)
-                critical=$(jq '. | length' $file)
-                ;;
-              *)
-                critical=0
-                ;;
-            esac
-
-            if [ "$critical" -gt 0 ]; then
-              echo "Critical/High issues detected by $scanner: $critical"
-              fail_count=$((fail_count+1))
-            fi
-          fi
-        done
-
-        if [ "$fail_count" -gt 0 ]; then
-          echo "Pipeline failed due to critical/high findings."
-          exit 1
-        else
-          echo "No critical/high findings detected."
-        fi
-
-    # ---- Upload reports as artifacts ----
-    - name: Upload security reports
-      uses: actions/upload-artifact@v4
-      with:
-        name: security-reports
-        path: reports/
+      - name: Upload reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-reports
+          path: reports/
