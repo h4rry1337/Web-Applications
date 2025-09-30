@@ -27,7 +27,7 @@ jobs:
       - name: Prepare reports directory
         run: mkdir -p reports
 
-      - name: Run gosec (Go security linter)
+      - name: Run Gosec
         run: |
           if [ -f go.mod ]; then
             curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s -- -b $HOME/bin latest
@@ -53,61 +53,6 @@ jobs:
           name: semgrep-report-${{ matrix.go-version }}
           path: reports/semgrep-report.json
 
-  gitleaks:
-    name: Secrets Scanning (Gitleaks)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Prepare reports directory
-        run: mkdir -p reports
-
-      - name: Run Gitleaks
-        run: |
-          curl -sSL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64 -o gitleaks
-          chmod +x gitleaks
-          ./gitleaks detect --source=. --report-format=json --report-path reports/gitleaks-report.json || true
-          cat reports/gitleaks-report.json
-          if [ ! -f reports/gitleaks-report.json ]; then
-            echo "{}" > reports/gitleaks-report.json
-          fi
-
-      - name: Upload Gitleaks report
-        uses: actions/upload-artifact@v4
-        with:
-          name: gitleaks-report
-          path: reports/gitleaks-report.json
-
-  trufflehog:
-    name: Secrets Scanning (TruffleHog)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Prepare reports directory
-        run: mkdir -p reports
-
-      - name: Run TruffleHog
-        run: |
-          pip install trufflehog
-          trufflehog filesystem . --json > reports/trufflehog-report.json || true
-          cat reports/trufflehog-report.json
-          if [ ! -f reports/trufflehog-report.json ]; then
-            echo "{}" > reports/trufflehog-report.json
-          fi
-
-      - name: Upload TruffleHog report
-        uses: actions/upload-artifact@v4
-        with:
-          name: trufflehog-report
-          path: reports/trufflehog-report.json
-
   deps:
     name: Dependency Vulnerability Scan (Trivy)
     runs-on: ubuntu-latest
@@ -120,7 +65,7 @@ jobs:
       - name: Prepare reports directory
         run: mkdir -p reports
 
-      - name: Run Trivy on source code
+      - name: Run Trivy
         run: |
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b $HOME/bin
           $HOME/bin/trivy fs --security-checks vuln,config --exit-code 0 --format json -o reports/trivy-report.json .
@@ -130,3 +75,54 @@ jobs:
         with:
           name: trivy-report
           path: reports/trivy-report.json
+
+  secrets:
+    name: Secrets Scanning (Gitleaks + TruffleHog)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Prepare reports directory
+        run: mkdir -p reports
+
+      - name: Run Gitleaks and TruffleHog in parallel
+        run: |
+          # Run Gitleaks
+          curl -sSL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64 -o gitleaks
+          chmod +x gitleaks
+          ./gitleaks detect --source=. --report-format=json --report-path reports/gitleaks-report.json --exit-code 0 &
+          GITLEAKS_PID=$!
+
+          # Run TruffleHog
+          pip install trufflehog
+          trufflehog filesystem . --json > reports/trufflehog-report.json || true &
+          TRUFFLEHOG_PID=$!
+
+          # Wait for both
+          wait $GITLEAKS_PID
+          wait $TRUFFLEHOG_PID
+
+          # Ensure JSON files exist
+          [ ! -f reports/gitleaks-report.json ] && echo "{}" > reports/gitleaks-report.json
+          [ ! -f reports/trufflehog-report.json ] && echo "{}" > reports/trufflehog-report.json
+
+          # Display logs
+          echo "Gitleaks report:"
+          cat reports/gitleaks-report.json
+          echo "TruffleHog report:"
+          cat reports/trufflehog-report.json
+
+      - name: Upload Gitleaks report
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitleaks-report
+          path: reports/gitleaks-report.json
+
+      - name: Upload TruffleHog report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trufflehog-report
+          path: reports/trufflehog-report.json
