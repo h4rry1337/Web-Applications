@@ -12,62 +12,71 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
+      - name: Prepare reports directory
+        run: mkdir -p reports
 
       - name: Run gosec (Go security linter)
         if: hashFiles('go.mod') != ''
         run: |
           curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s -- -b $HOME/bin latest
-          $HOME/bin/gosec ./...
+          $HOME/bin/gosec ./... -fmt=json -out=reports/gosec-report.json
 
       - name: Run Semgrep
         run: |
           pip install semgrep
-          semgrep --config=auto --error --json > semgrep-report.json || true
+          semgrep --config=auto --error --json > reports/semgrep-report.json || true
 
-      - name: Upload semgrep report
+      - name: Upload Semgrep report
         uses: actions/upload-artifact@v4
         with:
           name: semgrep-report
-          path: semgrep-report.json
+          path: reports/semgrep-report.json
 
   secrets:
     name: Secrets Scanning (Gitleaks)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
+      - name: Prepare reports directory
+        run: mkdir -p reports
 
       - name: Run gitleaks
         run: |
           curl -sSL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64 -o gitleaks
           chmod +x gitleaks
-          ./gitleaks detect --report-format json --report-path gitleaks-report.json || true
+          ./gitleaks detect --report-format json --report-path reports/gitleaks-report.json || true
           # garante que o arquivo exista mesmo que não haja leaks
-          if [ ! -f gitleaks-report.json ]; then
-            echo "{}" > gitleaks-report.json
+          if [ ! -f reports/gitleaks-report.json ]; then
+            echo "{}" > reports/gitleaks-report.json
           fi
 
-      - name: Upload gitleaks report
+      - name: Upload Gitleaks report
         uses: actions/upload-artifact@v4
         with:
           name: gitleaks-report
-          path: gitleaks-report.json
+          path: reports/gitleaks-report.json
 
   deps:
     name: Dependency Vulnerability Scan (Trivy)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
+      - name: Prepare reports directory
+        run: mkdir -p reports
 
       - name: Run Trivy on source code
         run: |
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
-          ./trivy fs --security-checks vuln,config --exit-code 0 --format json -o trivy-report.json .
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b $HOME/bin
+          $HOME/bin/trivy fs --security-checks vuln,config --exit-code 0 --format json -o reports/trivy-report.json .
 
-      - name: Upload trivy report
+      - name: Upload Trivy report
         uses: actions/upload-artifact@v4
         with:
           name: trivy-report
-          path: trivy-report.json
+          path: reports/trivy-report.json
