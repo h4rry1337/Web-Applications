@@ -21,17 +21,14 @@ jobs:
 
       - name: Install tools
         run: |
-          # ---- Gosec via build ----
-          sudo apt-get update && sudo apt-get install -y golang
-          git clone --branch v2.23.0 https://github.com/securego/gosec.git
-          cd gosec
-          go build -o $HOME/bin/gosec ./cmd/gosec
-          cd ..
+          # ---- Gosec ----
+          curl -sSL https://github.com/securego/gosec/releases/latest/download/gosec_linux_amd64.tar.gz | tar -xz -C $HOME/bin
+          chmod +x $HOME/bin/gosec
 
           # ---- Trivy ----
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b $HOME/bin
 
-          # ---- Gitleaks via tar.gz ----
+          # ---- Gitleaks ----
           GITLEAKS_VERSION=8.28.0
           curl -sSL -o gitleaks.tar.gz https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz
           tar -xzf gitleaks.tar.gz -C $HOME
