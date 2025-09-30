@@ -7,12 +7,22 @@ on:
     branches: ["main"]
 
 jobs:
-  sast:
+  static-analysis:
     name: Static Code Analysis (Gosec + Semgrep)
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: [1.20, 1.21] # ajuste conforme necessário
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go-version }}
 
       - name: Prepare reports directory
         run: mkdir -p reports
@@ -28,37 +38,59 @@ jobs:
           pip install semgrep
           semgrep --config=auto --error --json > reports/semgrep-report.json || true
 
+      - name: Upload Gosec report
+        uses: actions/upload-artifact@v4
+        with:
+          name: gosec-report-${{ matrix.go-version }}
+          path: reports/gosec-report.json
+
       - name: Upload Semgrep report
         uses: actions/upload-artifact@v4
         with:
-          name: semgrep-report
+          name: semgrep-report-${{ matrix.go-version }}
           path: reports/semgrep-report.json
 
   secrets:
-    name: Secrets Scanning (Gitleaks)
+    name: Secrets Scanning (Gitleaks + TruffleHog)
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        tool: [gitleaks, trufflehog]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Prepare reports directory
         run: mkdir -p reports
 
-      - name: Run gitleaks
+      - name: Run secret scanning tool
         run: |
-          curl -sSL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64 -o gitleaks
-          chmod +x gitleaks
-          ./gitleaks detect --report-format json --report-path reports/gitleaks-report.json || true
-          # garante que o arquivo exista mesmo que não haja leaks
-          if [ ! -f reports/gitleaks-report.json ]; then
-            echo "{}" > reports/gitleaks-report.json
+          if [ "${{ matrix.tool }}" == "gitleaks" ]; then
+            curl -sSL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64 -o gitleaks
+            chmod +x gitleaks
+            ./gitleaks detect --source=. --report-format=json --report-path reports/gitleaks-report.json || true
+            echo "Gitleaks report:"
+            cat reports/gitleaks-report.json
+            if [ ! -f reports/gitleaks-report.json ]; then
+              echo "{}" > reports/gitleaks-report.json
+            fi
+          elif [ "${{ matrix.tool }}" == "trufflehog" ]; then
+            pip install trufflehog
+            trufflehog filesystem . --json > reports/trufflehog-report.json || true
+            echo "TruffleHog report:"
+            cat reports/trufflehog-report.json
+            if [ ! -f reports/trufflehog-report.json ]; then
+              echo "{}" > reports/trufflehog-report.json
+            fi
           fi
 
-      - name: Upload Gitleaks report
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: gitleaks-report
-          path: reports/gitleaks-report.json
+          name: ${{ matrix.tool }}-report
+          path: ${{ matrix.tool == 'gitleaks' && 'reports/gitleaks-report.json' || 'reports/trufflehog-report.json' }}
 
   deps:
     name: Dependency Vulnerability Scan (Trivy)
@@ -66,6 +98,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Prepare reports directory
         run: mkdir -p reports
