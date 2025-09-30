@@ -25,7 +25,7 @@ jobs:
           pip install semgrep
           semgrep --config=auto --error --json > semgrep-report.json || true
 
-      - name: Upload semgrep report (artifact)
+      - name: Upload semgrep report
         uses: actions/upload-artifact@v4
         with:
           name: semgrep-report
@@ -43,6 +43,10 @@ jobs:
           curl -sSL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64 -o gitleaks
           chmod +x gitleaks
           ./gitleaks detect --report-format json --report-path gitleaks-report.json || true
+          # garante que o arquivo exista mesmo que não haja leaks
+          if [ ! -f gitleaks-report.json ]; then
+            echo "{}" > gitleaks-report.json
+          fi
 
       - name: Upload gitleaks report
         uses: actions/upload-artifact@v4
