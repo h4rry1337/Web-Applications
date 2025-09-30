@@ -17,30 +17,26 @@ jobs:
           fetch-depth: 0
 
       - name: Prepare reports directory
-        run: mkdir -p reports
+        run: mkdir -p reports $HOME/bin
 
       - name: Install tools
         run: |
-          mkdir -p $HOME/bin
+          # ---- Gosec ----
+          GOSEC_VERSION=2.23.0
+          curl -sfL https://github.com/securego/gosec/releases/download/v${GOSEC_VERSION}/gosec_${GOSEC_VERSION}_linux_amd64.tar.gz -o gosec.tar.gz
+          tar -xzf gosec.tar.gz -C $HOME/bin
+          chmod +x $HOME/bin/gosec
 
-          # Gosec
-          if [ ! -f $HOME/bin/gosec ]; then
-            curl -sfL https://raw.githubusercontent.com/securego/gosec/v2.23.0/install.sh | sh -s -- -b $HOME/bin v2.23.0
-          fi
+          # ---- Trivy ----
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b $HOME/bin
 
-          # Trivy
-          if [ ! -f $HOME/bin/trivy ]; then
-            curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b $HOME/bin
-          fi
+          # ---- Gitleaks via tar.gz ----
+          GITLEAKS_VERSION=8.28.0
+          curl -sSL -o gitleaks.tar.gz https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz
+          tar -xzf gitleaks.tar.gz -C $HOME
+          chmod +x $HOME/gitleaks
 
-          # Gitleaks via tar.gz
-          if [ ! -f $HOME/gitleaks ]; then
-            curl -sSL -o gitleaks.tar.gz https://github.com/gitleaks/gitleaks/releases/download/v8.28.0/gitleaks_8.28.0_linux_x64.tar.gz
-            tar -xzf gitleaks.tar.gz -C $HOME
-            chmod +x $HOME/gitleaks
-          fi
-
-          # Python packages for Semgrep and TruffleHog
+          # ---- Python packages ----
           pip install --user semgrep trufflehog
 
       - name: Verify binaries
@@ -53,7 +49,7 @@ jobs:
 
       - name: Run all scans in parallel
         run: |
-          # Gosec
+          # ---- Gosec ----
           if [ -f go.mod ]; then
             $HOME/bin/gosec ./... -fmt=json -out=reports/gosec-report.json || true &
             GOSEC_PID=$!
@@ -61,30 +57,30 @@ jobs:
             echo "{}" > reports/gosec-report.json
           fi
 
-          # Semgrep
+          # ---- Semgrep ----
           $HOME/.local/bin/semgrep --config=auto --error --json > reports/semgrep-report.json || true &
           SEMGREP_PID=$!
 
-          # Trivy
+          # ---- Trivy ----
           $HOME/bin/trivy fs --scanners vuln,misconfig --exit-code 0 --format json -o reports/trivy-report.json . &
           TRIVY_PID=$!
 
-          # Gitleaks
+          # ---- Gitleaks ----
           $HOME/gitleaks detect --source=. --report-format=json --report-path reports/gitleaks-report.json --exit-code 0 &
           GITLEAKS_PID=$!
 
-          # TruffleHog
+          # ---- TruffleHog ----
           $HOME/.local/bin/trufflehog filesystem --repo_path . --json > reports/trufflehog-report.json || true &
           TRUFFLEHOG_PID=$!
 
-          # Wait for all
+          # ---- Wait for all ----
           [ ! -z "$GOSEC_PID" ] && wait $GOSEC_PID
           wait $SEMGREP_PID
           wait $TRIVY_PID
           wait $GITLEAKS_PID
           wait $TRUFFLEHOG_PID
 
-          # Ensure all reports exist
+          # ---- Ensure JSON reports exist ----
           for f in gosec-report.json semgrep-report.json trivy-report.json gitleaks-report.json trufflehog-report.json; do
             [ ! -f reports/$f ] && echo "{}" > reports/$f
           done
