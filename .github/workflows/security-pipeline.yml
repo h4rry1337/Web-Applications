@@ -28,10 +28,13 @@ jobs:
         run: mkdir -p reports
 
       - name: Run gosec (Go security linter)
-        if: hashFiles('go.mod') != ''
         run: |
-          curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s -- -b $HOME/bin latest
-          $HOME/bin/gosec ./... -fmt=json -out=reports/gosec-report.json
+          if [ -f go.mod ]; then
+            curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s -- -b $HOME/bin latest
+            $HOME/bin/gosec ./... -fmt=json -out=reports/gosec-report.json || true
+          else
+            echo "{}" > reports/gosec-report.json
+          fi
 
       - name: Run Semgrep
         run: |
@@ -50,12 +53,9 @@ jobs:
           name: semgrep-report-${{ matrix.go-version }}
           path: reports/semgrep-report.json
 
-  secrets:
-    name: Secrets Scanning (Gitleaks + TruffleHog)
+  gitleaks:
+    name: Secrets Scanning (Gitleaks)
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        tool: [gitleaks, trufflehog]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -65,32 +65,48 @@ jobs:
       - name: Prepare reports directory
         run: mkdir -p reports
 
-      - name: Run secret scanning tool
+      - name: Run Gitleaks
         run: |
-          if [ "${{ matrix.tool }}" == "gitleaks" ]; then
-            curl -sSL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64 -o gitleaks
-            chmod +x gitleaks
-            ./gitleaks detect --source=. --report-format=json --report-path reports/gitleaks-report.json || true
-            echo "Gitleaks report:"
-            cat reports/gitleaks-report.json
-            if [ ! -f reports/gitleaks-report.json ]; then
-              echo "{}" > reports/gitleaks-report.json
-            fi
-          elif [ "${{ matrix.tool }}" == "trufflehog" ]; then
-            pip install trufflehog
-            trufflehog filesystem . --json > reports/trufflehog-report.json || true
-            echo "TruffleHog report:"
-            cat reports/trufflehog-report.json
-            if [ ! -f reports/trufflehog-report.json ]; then
-              echo "{}" > reports/trufflehog-report.json
-            fi
+          curl -sSL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64 -o gitleaks
+          chmod +x gitleaks
+          ./gitleaks detect --source=. --report-format=json --report-path reports/gitleaks-report.json || true
+          cat reports/gitleaks-report.json
+          if [ ! -f reports/gitleaks-report.json ]; then
+            echo "{}" > reports/gitleaks-report.json
           fi
 
-      - name: Upload artifact
+      - name: Upload Gitleaks report
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.tool }}-report
-          path: ${{ matrix.tool == 'gitleaks' && 'reports/gitleaks-report.json' || 'reports/trufflehog-report.json' }}
+          name: gitleaks-report
+          path: reports/gitleaks-report.json
+
+  trufflehog:
+    name: Secrets Scanning (TruffleHog)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Prepare reports directory
+        run: mkdir -p reports
+
+      - name: Run TruffleHog
+        run: |
+          pip install trufflehog
+          trufflehog filesystem . --json > reports/trufflehog-report.json || true
+          cat reports/trufflehog-report.json
+          if [ ! -f reports/trufflehog-report.json ]; then
+            echo "{}" > reports/trufflehog-report.json
+          fi
+
+      - name: Upload TruffleHog report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trufflehog-report
+          path: reports/trufflehog-report.json
 
   deps:
     name: Dependency Vulnerability Scan (Trivy)
