@@ -26,7 +26,7 @@ jobs:
           semgrep --config=auto --error --json > semgrep-report.json || true
 
       - name: Upload semgrep report (artifact)
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: semgrep-report
           path: semgrep-report.json
@@ -45,7 +45,7 @@ jobs:
           ./gitleaks detect --report-format json --report-path gitleaks-report.json || true
 
       - name: Upload gitleaks report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: gitleaks-report
           path: gitleaks-report.json
@@ -63,7 +63,7 @@ jobs:
           ./trivy fs --security-checks vuln,config --exit-code 0 --format json -o trivy-report.json .
 
       - name: Upload trivy report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: trivy-report
           path: trivy-report.json
