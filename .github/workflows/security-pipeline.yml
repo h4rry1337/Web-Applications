@@ -1,3 +1,4 @@
+```yaml
 name: Security Pipeline
 
 on:
@@ -9,13 +10,13 @@ on:
 jobs:
   sast:
     name: Static Code Analysis (Gosec + Semgrep)
-    runs-on: ubuntu_latest
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Run gosec (Go security linter)
-        if: fileExists('go.mod')
+        if: hashFiles('go.mod') != ''
         run: |
           curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s -- -b $HOME/bin latest
           $HOME/bin/gosec ./...
@@ -33,7 +34,7 @@ jobs:
 
   secrets:
     name: Secrets Scanning (Gitleaks)
-    runs-on: ubuntu_latest
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -52,7 +53,7 @@ jobs:
 
   deps:
     name: Dependency Vulnerability Scan (Trivy)
-    runs-on: ubuntu_latest
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -67,3 +68,4 @@ jobs:
         with:
           name: trivy-report
           path: trivy-report.json
+```
