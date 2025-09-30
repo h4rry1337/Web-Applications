@@ -1,4 +1,4 @@
-name: Security Pipeline Final
+name: Security Pipeline
 
 on:
   push:
@@ -19,16 +19,7 @@ jobs:
       - name: Prepare reports directory
         run: mkdir -p reports
 
-      - name: Cache binaries
-        uses: actions/cache@v4
-        with:
-          path: |
-            $HOME/bin/gosec
-            $HOME/bin/trivy
-            $HOME/gitleaks
-          key: security-tools-cache-v4
-
-      - name: Install tools if missing
+      - name: Install tools
         run: |
           mkdir -p $HOME/bin
 
@@ -42,16 +33,16 @@ jobs:
             curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b $HOME/bin
           fi
 
-          # Gitleaks (Linux x86_64, com redirect)
+          # Gitleaks (Linux x86_64)
           if [ ! -f $HOME/gitleaks ]; then
             curl -sSL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64 -o $HOME/gitleaks
             chmod +x $HOME/gitleaks
           fi
 
-          # Python packages
+          # Python packages for Semgrep and TruffleHog
           pip install --user semgrep trufflehog
 
-      - name: Run all scanners in parallel
+      - name: Run all scans in parallel
         run: |
           # Gosec
           if [ -f go.mod ]; then
@@ -84,7 +75,7 @@ jobs:
           wait $GITLEAKS_PID
           wait $TRUFFLEHOG_PID
 
-          # Ensure JSON files exist
+          # Ensure all reports exist
           for f in gosec-report.json semgrep-report.json trivy-report.json gitleaks-report.json trufflehog-report.json; do
             [ ! -f reports/$f ] && echo "{}" > reports/$f
           done
