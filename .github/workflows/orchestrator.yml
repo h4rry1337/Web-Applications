@@ -12,8 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Set repos list
-        id: repos
-        run: echo "REPOS=$(echo '${{ github.event.inputs.repos }}' | tr ',' ' ')" >> $GITHUB_ENV
+        run: |
+          echo "REPOS=$(echo '${{ github.event.inputs.repos }}' | tr ',' ' ')" >> $GITHUB_ENV
 
       - name: Trigger scans in each repo
         run: |
@@ -22,9 +22,9 @@ jobs:
             curl -X POST \
               -H "Authorization: token ${{ secrets.PERSONAL_ACCESS_TOKEN }}" \
               -H "Accept: application/vnd.github+json" \
-              https://api.github.com/repos/<ORGANIZATION>/$repo/actions/workflows/security-pipeline.yml/dispatches \
-              -d '{"ref":"main"}'
+              https://api.github.com/repos/h4rry1337/$repo/actions/workflows/security-pipeline.yml/dispatches \
+              -d "{\"ref\":\"main\"}"
           done
-          
+
       - name: Notify
         run: echo "Security scans triggered for: $REPOS"
