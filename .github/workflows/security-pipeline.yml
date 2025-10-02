@@ -57,7 +57,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Necessário para histórico completo do Git
+          fetch-depth: 0
 
       - name: Prepare reports directory
         run: mkdir -p reports $HOME/bin $HOME/.local/bin
@@ -97,7 +97,7 @@ jobs:
           path: reports/
 
   deps:
-    name: Dependency Vulnerability Scan (Trivy)
+    name: Dependency & IaC Vulnerability Scan (Trivy)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -111,15 +111,22 @@ jobs:
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b $HOME/bin
           echo -e "\033[1;32mTrivy version: $($HOME/bin/trivy --version)\033[0m"
 
-      - name: Run Trivy
+      - name: Run Trivy (Dependencies)
         run: |
-          echo -e "\033[1;34mRunning Trivy...\033[0m"
-          $HOME/bin/trivy fs --scanners vuln,misconfig --exit-code 0 --format json -o reports/trivy-report.json .
-          [ ! -f reports/trivy-report.json ] && echo "{}" > reports/trivy-report.json
-          echo -e "\033[1;32mTrivy scan finished\033[0m"
+          echo -e "\033[1;34mRunning Trivy for Dependencies...\033[0m"
+          $HOME/bin/trivy fs --scanners vuln --exit-code 0 --format json -o reports/trivy-deps.json .
+          [ ! -f reports/trivy-deps.json ] && echo "{}" > reports/trivy-deps.json
+          echo -e "\033[1;32mTrivy deps scan finished\033[0m"
 
-      - name: Upload Trivy report
+      - name: Run Trivy (IaC Misconfigs)
+        run: |
+          echo -e "\033[1;34mRunning Trivy for IaC Misconfigs...\033[0m"
+          $HOME/bin/trivy fs --scanners misconfig --exit-code 0 --format json -o reports/trivy-iac.json .
+          [ ! -f reports/trivy-iac.json ] && echo "{}" > reports/trivy-iac.json
+          echo -e "\033[1;32mTrivy IaC scan finished\033[0m"
+
+      - name: Upload Trivy reports
         uses: actions/upload-artifact@v4
         with:
-          name: trivy-report
+          name: trivy-reports
           path: reports/
