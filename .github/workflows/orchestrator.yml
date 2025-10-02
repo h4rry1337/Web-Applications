@@ -1,0 +1,30 @@
+name: Multi-Repo Security Orchestrator
+
+on:
+  workflow_dispatch:
+    inputs:
+      repos:
+        description: 'Repos to scan (comma-separated)'
+        default: 'service-api,service-ui'
+
+jobs:
+  trigger-scans:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set repos list
+        id: repos
+        run: echo "REPOS=$(echo '${{ github.event.inputs.repos }}' | tr ',' ' ')" >> $GITHUB_ENV
+
+      - name: Trigger scans in each repo
+        run: |
+          for repo in $REPOS; do
+            echo "Triggering scan for $repo"
+            curl -X POST \
+              -H "Authorization: token ${{ secrets.PERSONAL_ACCESS_TOKEN }}" \
+              -H "Accept: application/vnd.github+json" \
+              https://api.github.com/repos/<ORGANIZATION>/$repo/actions/workflows/security-pipeline.yml/dispatches \
+              -d '{"ref":"main"}'
+          done
+
+      - name: Notify
+        run: echo "Security scans triggered for: $REPOS"
