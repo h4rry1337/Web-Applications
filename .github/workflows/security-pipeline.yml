@@ -1,6 +1,7 @@
 name: Security Pipeline Scan
 
 on:
+  workflow_dispatch:
   push:
     branches: ["main"]
   pull_request:
@@ -11,41 +12,28 @@ jobs:
     name: Static Code Analysis (Gosec + Semgrep)
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - run: mkdir -p reports $HOME/bin $HOME/.local/bin
 
-      - name: Prepare reports directory
-        run: mkdir -p reports $HOME/bin $HOME/.local/bin
-
-      # ---- Gosec ----
       - name: Install Gosec
         run: |
           curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s -- -b $HOME/bin v2.21.4
-          echo -e "\033[1;32mGosec version: $($HOME/bin/gosec version)\033[0m"
 
       - name: Run Gosec
         if: hashFiles('go.mod') != ''
         run: |
-          echo -e "\033[1;34mRunning Gosec...\033[0m"
           $HOME/bin/gosec ./... -fmt=json -out=reports/gosec-report.json || true
           [ ! -f reports/gosec-report.json ] && echo "{}" > reports/gosec-report.json
-          echo -e "\033[1;32mGosec scan finished\033[0m"
 
-      # ---- Semgrep ----
       - name: Install Semgrep
-        run: |
-          pip install --user semgrep
-          echo -e "\033[1;32mSemgrep version: $($HOME/.local/bin/semgrep --version)\033[0m"
+        run: pip install --user semgrep
 
       - name: Run Semgrep
         run: |
-          echo -e "\033[1;34mRunning Semgrep...\033[0m"
           $HOME/.local/bin/semgrep --config=auto --error --json > reports/semgrep-report.json || true
           [ ! -f reports/semgrep-report.json ] && echo "{}" > reports/semgrep-report.json
-          echo -e "\033[1;32mSemgrep scan finished\033[0m"
 
-      - name: Upload SAST reports
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: sast-reports
           path: reports/
@@ -54,15 +42,12 @@ jobs:
     name: Secrets Scanning (Gitleaks + TruffleHog)
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Prepare reports directory
-        run: mkdir -p reports $HOME/bin $HOME/.local/bin
+      - run: mkdir -p reports $HOME/bin $HOME/.local/bin
 
-      # ---- Gitleaks ----
       - name: Install Gitleaks
         run: |
           GITLEAKS_VERSION="8.21.2"
@@ -70,63 +55,42 @@ jobs:
           tar -xzf gitleaks.tar.gz -C $HOME/bin
           chmod +x $HOME/bin/gitleaks
           rm gitleaks.tar.gz
-          echo -e "\033[1;32mGitleaks version: $($HOME/bin/gitleaks version)\033[0m"
 
       - name: Run Gitleaks
-        run: |
-          echo -e "\033[1;34mRunning Gitleaks...\033[0m"
-          $HOME/bin/gitleaks detect --source=. --report-format=json --report-path=reports/gitleaks-report.json --exit-code=0 || true
-          [ ! -f reports/gitleaks-report.json ] && echo "[]" > reports/gitleaks-report.json
-          echo -e "\033[1;32mGitleaks scan finished\033[0m"
+        run: $HOME/bin/gitleaks detect --source=. --report-format=json --report-path=reports/gitleaks-report.json --exit-code=0 || true
 
-      # ---- TruffleHog ----
       - name: Install TruffleHog
         run: pip install --user trufflehog
 
       - name: Run TruffleHog
-        run: |
-          echo -e "\033[1;34mRunning TruffleHog...\033[0m"
-          $HOME/.local/bin/trufflehog filesystem --directory=. --json > reports/trufflehog-report.json || true
-          [ ! -f reports/trufflehog-report.json ] && echo "{}" > reports/trufflehog-report.json
-          echo -e "\033[1;32mTruffleHog scan finished\033[0m"
+        run: $HOME/.local/bin/trufflehog filesystem --directory=. --json > reports/trufflehog-report.json || true
 
-      - name: Upload Secrets reports
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: secrets-reports
           path: reports/
 
-  deps:
+  trivy:
     name: Dependency & IaC Vulnerability Scan (Trivy)
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Prepare reports directory
-        run: mkdir -p reports $HOME/bin
+      - uses: actions/checkout@v4
+      - run: mkdir -p reports $HOME/bin
 
       - name: Install Trivy
-        run: |
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b $HOME/bin
-          echo -e "\033[1;32mTrivy version: $($HOME/bin/trivy --version)\033[0m"
+        run: curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b $HOME/bin
 
       - name: Run Trivy (Dependencies)
         run: |
-          echo -e "\033[1;34mRunning Trivy for Dependencies...\033[0m"
           $HOME/bin/trivy fs --scanners vuln --exit-code 0 --format json -o reports/trivy-deps.json .
           [ ! -f reports/trivy-deps.json ] && echo "{}" > reports/trivy-deps.json
-          echo -e "\033[1;32mTrivy deps scan finished\033[0m"
 
       - name: Run Trivy (IaC Misconfigs)
         run: |
-          echo -e "\033[1;34mRunning Trivy for IaC Misconfigs...\033[0m"
           $HOME/bin/trivy fs --scanners misconfig --exit-code 0 --format json -o reports/trivy-iac.json .
           [ ! -f reports/trivy-iac.json ] && echo "{}" > reports/trivy-iac.json
-          echo -e "\033[1;32mTrivy IaC scan finished\033[0m"
 
-      - name: Upload Trivy reports
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: trivy-reports
           path: reports/
