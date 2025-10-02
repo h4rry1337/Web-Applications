@@ -25,6 +25,6 @@ jobs:
               https://api.github.com/repos/<ORGANIZATION>/$repo/actions/workflows/security-pipeline.yml/dispatches \
               -d '{"ref":"main"}'
           done
-
+          
       - name: Notify
         run: echo "Security scans triggered for: $REPOS"
