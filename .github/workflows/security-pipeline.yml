@@ -16,8 +16,7 @@ jobs:
       - run: mkdir -p reports $HOME/bin $HOME/.local/bin
 
       - name: Install Gosec
-        run: |
-          curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s -- -b $HOME/bin v2.21.4
+        run: curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s -- -b $HOME/bin v2.21.4
 
       - name: Run Gosec
         if: hashFiles('go.mod') != ''
