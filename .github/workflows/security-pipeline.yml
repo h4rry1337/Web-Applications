@@ -479,30 +479,34 @@ jobs:
           TOTAL_FINDINGS=$(cat consolidated/summary.txt | grep "Total Findings" | cut -d: -f2 | tr -d ' ')
           TOTAL_TOOLS=$(cat consolidated/summary.txt | grep "Total Tools" | cut -d: -f2 | tr -d ' ')
           
-          cat > security-summary.md << EOF
-# 🔐 Security Scan Results
-
-## Scan Execution
-- **Branch:** \`${{ github.ref_name }}\`
-- **Commit:** \`${{ github.sha }}\`
-- **Workflow Run:** #${{ github.run_number }}
-- **Timestamp:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
-
-## Tools Executed
-- ✅ **SAST:** Gosec, Semgrep
-- ✅ **Secrets:** Gitleaks, TruffleHog  
-- ✅ **Dependencies:** Trivy
-- ✅ **IaC:** Trivy Misconfig
-
-## Summary
-- **Total Tools:** ${TOTAL_TOOLS}
-- **Total Findings:** ${TOTAL_FINDINGS}
-
-## View Results
-📍 Check the **Security** tab in your repository for detailed findings.
-
-All SARIF reports have been uploaded and are available for review in the workflow artifacts.
-EOF
+          cat > security-summary.md << 'EOFSUMMARY'
+          # 🔐 Security Scan Results
+          
+          ## Scan Execution
+          - **Branch:** `${{ github.ref_name }}`
+          - **Commit:** `${{ github.sha }}`
+          - **Workflow Run:** #${{ github.run_number }}
+          - **Timestamp:** TIMESTAMP_PLACEHOLDER
+          
+          ## Tools Executed
+          - ✅ **SAST:** Gosec, Semgrep
+          - ✅ **Secrets:** Gitleaks, TruffleHog  
+          - ✅ **Dependencies:** Trivy
+          - ✅ **IaC:** Trivy Misconfig
+          
+          ## Summary
+          - **Total Tools:** TOOLS_PLACEHOLDER
+          - **Total Findings:** FINDINGS_PLACEHOLDER
+          
+          ## View Results
+          📍 Check the **Security** tab in your repository for detailed findings.
+          
+          All SARIF reports have been uploaded and are available for review in the workflow artifacts.
+          EOFSUMMARY
+          
+          sed -i "s/TIMESTAMP_PLACEHOLDER/$(date -u +"%Y-%m-%d %H:%M:%S UTC")/g" security-summary.md
+          sed -i "s/TOOLS_PLACEHOLDER/${TOTAL_TOOLS}/g" security-summary.md
+          sed -i "s/FINDINGS_PLACEHOLDER/${TOTAL_FINDINGS}/g" security-summary.md
           
           cat security-summary.md
           echo "TOTAL_FINDINGS=${TOTAL_FINDINGS}" >> $GITHUB_ENV
