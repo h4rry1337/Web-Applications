@@ -188,117 +188,109 @@ jobs:
 
       - name: Convert TruffleHog to SARIF
         run: |
-          cat > convert_trufflehog_to_sarif.py << 'EOF'
-import json
-import sys
-from pathlib import Path
-
-def convert_to_sarif(input_file, output_file):
-    try:
-        with open(input_file, 'r') as f:
-            content = f.read()
-            if not content.strip():
-                trufflehog_results = []
-            else:
-                # TruffleHog outputs one JSON per line
-                trufflehog_results = [json.loads(line) for line in content.splitlines() if line.strip()]
-    except Exception as e:
-        print(f"Error reading TruffleHog results: {e}")
-        trufflehog_results = []
-
-    sarif = {
-        "version": "2.1.0",
-        "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
-        "runs": [{
-            "tool": {
-                "driver": {
-                    "name": "TruffleHog",
-                    "version": "3.0",
-                    "informationUri": "https://github.com/trufflesecurity/trufflehog",
-                    "rules": []
-                }
-            },
-            "results": []
-        }]
-    }
-    
-    rules_map = {}
-    
-    for finding in trufflehog_results:
-        if not isinstance(finding, dict):
-            continue
-        
-        # Extrair informações do finding
-        detector_name = finding.get("DetectorName", finding.get("detector_name", "unknown"))
-        source_metadata = finding.get("SourceMetadata", finding.get("source_metadata", {}))
-        
-        # Criar regra única para cada tipo de detector
-        if detector_name not in rules_map:
-            rule = {
-                "id": f"trufflehog/{detector_name}",
-                "name": detector_name,
-                "shortDescription": {
-                    "text": f"Secret detected by {detector_name}"
-                },
-                "fullDescription": {
-                    "text": f"TruffleHog detected a potential secret using the {detector_name} detector"
-                },
-                "defaultConfiguration": {
-                    "level": "error"
-                },
-                "properties": {
-                    "tags": ["security", "secrets"]
-                }
-            }
-            rules_map[detector_name] = rule
-            sarif["runs"][0]["tool"]["driver"]["rules"].append(rule)
-        
-        # Extrair localização do arquivo
-        data = source_metadata.get("Data", source_metadata.get("data", {}))
-        
-        # TruffleHog v3 structure
-        file_path = "unknown"
-        line_number = 1
-        
-        if "Filesystem" in data or "filesystem" in data:
-            filesystem = data.get("Filesystem", data.get("filesystem", {}))
-            file_path = filesystem.get("file", filesystem.get("File", "unknown"))
-            line_number = filesystem.get("line", filesystem.get("Line", 1))
-        elif "Git" in data or "git" in data:
-            git_data = data.get("Git", data.get("git", {}))
-            file_path = git_data.get("file", git_data.get("File", "unknown"))
-            line_number = git_data.get("line", git_data.get("Line", 1))
-        
-        # Criar resultado
-        result = {
-            "ruleId": f"trufflehog/{detector_name}",
-            "level": "error",
-            "message": {
-                "text": f"Potential secret found: {detector_name}"
-            },
-            "locations": [{
-                "physicalLocation": {
-                    "artifactLocation": {
-                        "uri": file_path
-                    },
-                    "region": {
-                        "startLine": int(line_number) if line_number else 1
-                    }
-                }
-            }]
-        }
-        
-        sarif["runs"][0]["results"].append(result)
-    
-    # Salvar SARIF
-    with open(output_file, 'w') as f:
-        json.dump(sarif, f, indent=2)
-    
-    print(f"✓ Converted {len(sarif['runs'][0]['results'])} findings to SARIF")
-
-if __name__ == "__main__":
-    convert_to_sarif("reports/trufflehog-report.json", "sarif-reports/trufflehog.sarif")
-EOF
+          cat > convert_trufflehog_to_sarif.py << 'EOFPYTHON'
+          import json
+          import sys
+          from pathlib import Path
+          
+          def convert_to_sarif(input_file, output_file):
+              try:
+                  with open(input_file, 'r') as f:
+                      content = f.read()
+                      if not content.strip():
+                          trufflehog_results = []
+                      else:
+                          trufflehog_results = [json.loads(line) for line in content.splitlines() if line.strip()]
+              except Exception as e:
+                  print(f"Error reading TruffleHog results: {e}")
+                  trufflehog_results = []
+          
+              sarif = {
+                  "version": "2.1.0",
+                  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+                  "runs": [{
+                      "tool": {
+                          "driver": {
+                              "name": "TruffleHog",
+                              "version": "3.0",
+                              "informationUri": "https://github.com/trufflesecurity/trufflehog",
+                              "rules": []
+                          }
+                      },
+                      "results": []
+                  }]
+              }
+              
+              rules_map = {}
+              
+              for finding in trufflehog_results:
+                  if not isinstance(finding, dict):
+                      continue
+                  
+                  detector_name = finding.get("DetectorName", finding.get("detector_name", "unknown"))
+                  source_metadata = finding.get("SourceMetadata", finding.get("source_metadata", {}))
+                  
+                  if detector_name not in rules_map:
+                      rule = {
+                          "id": f"trufflehog/{detector_name}",
+                          "name": detector_name,
+                          "shortDescription": {
+                              "text": f"Secret detected by {detector_name}"
+                          },
+                          "fullDescription": {
+                              "text": f"TruffleHog detected a potential secret using the {detector_name} detector"
+                          },
+                          "defaultConfiguration": {
+                              "level": "error"
+                          },
+                          "properties": {
+                              "tags": ["security", "secrets"]
+                          }
+                      }
+                      rules_map[detector_name] = rule
+                      sarif["runs"][0]["tool"]["driver"]["rules"].append(rule)
+                  
+                  data = source_metadata.get("Data", source_metadata.get("data", {}))
+                  file_path = "unknown"
+                  line_number = 1
+                  
+                  if "Filesystem" in data or "filesystem" in data:
+                      filesystem = data.get("Filesystem", data.get("filesystem", {}))
+                      file_path = filesystem.get("file", filesystem.get("File", "unknown"))
+                      line_number = filesystem.get("line", filesystem.get("Line", 1))
+                  elif "Git" in data or "git" in data:
+                      git_data = data.get("Git", data.get("git", {}))
+                      file_path = git_data.get("file", git_data.get("File", "unknown"))
+                      line_number = git_data.get("line", git_data.get("Line", 1))
+                  
+                  result = {
+                      "ruleId": f"trufflehog/{detector_name}",
+                      "level": "error",
+                      "message": {
+                          "text": f"Potential secret found: {detector_name}"
+                      },
+                      "locations": [{
+                          "physicalLocation": {
+                              "artifactLocation": {
+                                  "uri": file_path
+                              },
+                              "region": {
+                                  "startLine": int(line_number) if line_number else 1
+                              }
+                          }
+                      }]
+                  }
+                  
+                  sarif["runs"][0]["results"].append(result)
+              
+              with open(output_file, 'w') as f:
+                  json.dump(sarif, f, indent=2)
+              
+              print(f"✓ Converted {len(sarif['runs'][0]['results'])} findings to SARIF")
+          
+          if __name__ == "__main__":
+              convert_to_sarif("reports/trufflehog-report.json", "sarif-reports/trufflehog.sarif")
+          EOFPYTHON
           
           python3 convert_trufflehog_to_sarif.py
           
@@ -426,54 +418,53 @@ EOF
         run: |
           mkdir -p consolidated
           
-          cat > consolidate_sarif.py << 'EOF'
-import json
-import os
-from pathlib import Path
-
-def merge_sarif_files(directory, output_file):
-    consolidated = {
-        "version": "2.1.0",
-        "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
-        "runs": []
-    }
-    
-    sarif_files = list(Path(directory).rglob("*.sarif"))
-    print(f"🔍 Found {len(sarif_files)} SARIF files")
-    
-    for sarif_file in sarif_files:
-        try:
-            with open(sarif_file, 'r') as f:
-                data = json.load(f)
-                if "runs" in data and data["runs"]:
-                    for run in data["runs"]:
-                        tool_name = run.get("tool", {}).get("driver", {}).get("name", sarif_file.stem)
-                        results_count = len(run.get("results", []))
-                        print(f"  ✓ {tool_name}: {results_count} findings")
-                        consolidated["runs"].append(run)
-        except Exception as e:
-            print(f"  ✗ Error processing {sarif_file}: {e}")
-    
-    with open(output_file, 'w') as f:
-        json.dump(consolidated, f, indent=2)
-    
-    total_results = sum(len(run.get("results", [])) for run in consolidated["runs"])
-    total_tools = len(consolidated["runs"])
-    
-    print(f"\n📊 Security Scan Summary:")
-    print(f"   • Tools executed: {total_tools}")
-    print(f"   • Total findings: {total_results}")
-    
-    return total_results, total_tools
-
-if __name__ == "__main__":
-    total, tools = merge_sarif_files("all-reports", "consolidated/all-findings.sarif")
-    
-    # Save summary
-    with open("consolidated/summary.txt", "w") as f:
-        f.write(f"Total Tools: {tools}\n")
-        f.write(f"Total Findings: {total}\n")
-EOF
+          cat > consolidate_sarif.py << 'EOFPYTHON'
+          import json
+          import os
+          from pathlib import Path
+          
+          def merge_sarif_files(directory, output_file):
+              consolidated = {
+                  "version": "2.1.0",
+                  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+                  "runs": []
+              }
+              
+              sarif_files = list(Path(directory).rglob("*.sarif"))
+              print(f"Found {len(sarif_files)} SARIF files")
+              
+              for sarif_file in sarif_files:
+                  try:
+                      with open(sarif_file, 'r') as f:
+                          data = json.load(f)
+                          if "runs" in data and data["runs"]:
+                              for run in data["runs"]:
+                                  tool_name = run.get("tool", {}).get("driver", {}).get("name", sarif_file.stem)
+                                  results_count = len(run.get("results", []))
+                                  print(f"  - {tool_name}: {results_count} findings")
+                                  consolidated["runs"].append(run)
+                  except Exception as e:
+                      print(f"  Error processing {sarif_file}: {e}")
+              
+              with open(output_file, 'w') as f:
+                  json.dump(consolidated, f, indent=2)
+              
+              total_results = sum(len(run.get("results", [])) for run in consolidated["runs"])
+              total_tools = len(consolidated["runs"])
+              
+              print(f"\nSecurity Scan Summary:")
+              print(f"   Tools executed: {total_tools}")
+              print(f"   Total findings: {total_results}")
+              
+              return total_results, total_tools
+          
+          if __name__ == "__main__":
+              total, tools = merge_sarif_files("all-reports", "consolidated/all-findings.sarif")
+              
+              with open("consolidated/summary.txt", "w") as f:
+                  f.write(f"Total Tools: {tools}\n")
+                  f.write(f"Total Findings: {total}\n")
+          EOFPYTHON
           
           python3 consolidate_sarif.py
 
