@@ -1,4 +1,4 @@
-name: Security Pipeline Scan with SARIF
+name: Security Pipeline Scan
 
 on:
   push:
@@ -27,7 +27,7 @@ jobs:
       - name: Prepare reports directory
         run: mkdir -p reports sarif-reports
 
-      # ---- Gosec com SARIF ----
+      # ---- Gosec ----
       - name: Install Gosec
         run: |
           go install github.com/securego/gosec/v2/cmd/gosec@latest
@@ -74,7 +74,7 @@ jobs:
           sarif_file: sarif-reports/gosec.sarif
           category: gosec
 
-      # ---- Semgrep com SARIF ----
+      # ---- Semgrep ----
       - name: Install Semgrep
         run: |
           python3 -m pip install --upgrade pip
@@ -130,7 +130,7 @@ jobs:
       - name: Prepare reports directory
         run: mkdir -p reports sarif-reports
 
-      # ---- Gitleaks com SARIF ----
+      # ---- Gitleaks ----
       - name: Install Gitleaks
         run: |
           GITLEAKS_VERSION="8.21.2"
@@ -169,7 +169,7 @@ jobs:
           sarif_file: sarif-reports/gitleaks.sarif
           category: gitleaks
 
-      # ---- TruffleHog com conversão para SARIF ----
+      # ---- TruffleHog ----
       - name: Install TruffleHog (via binary)
         run: |
           TRUFFLEHOG_VERSION="3.82.13"
@@ -350,7 +350,7 @@ jobs:
           which trivy
           trivy --version
 
-      # ---- Trivy Dependencies com SARIF ----
+      # ---- Trivy Dependencies ----
       - name: Run Trivy for Dependencies
         run: |
           echo -e "\033[1;34m▶ Running Trivy for Dependencies...\033[0m"
@@ -375,7 +375,7 @@ jobs:
           sarif_file: sarif-reports/trivy-deps.sarif
           category: trivy-dependencies
 
-      # ---- Trivy IaC com SARIF ----
+      # ---- Trivy IaC ----
       - name: Run Trivy for IaC Misconfigs
         run: |
           echo -e "\033[1;34m▶ Running Trivy for IaC Misconfigs...\033[0m"
@@ -490,7 +490,7 @@ jobs:
           TOTAL_TOOLS=$(cat consolidated/summary.txt | grep "Total Tools" | cut -d: -f2 | tr -d ' ')
           
           cat > security-summary.md << 'EOFSUMMARY'
-          # 🔐 Security Scan Results
+          # Security Scan Results
           
           ## Scan Execution
           - **Branch:** `${{ github.ref_name }}`
@@ -499,17 +499,17 @@ jobs:
           - **Timestamp:** TIMESTAMP_PLACEHOLDER
           
           ## Tools Executed
-          - ✅ **SAST:** Gosec, Semgrep
-          - ✅ **Secrets:** Gitleaks, TruffleHog  
-          - ✅ **Dependencies:** Trivy
-          - ✅ **IaC:** Trivy Misconfig
+          - **SAST:** Gosec, Semgrep
+          - **Secrets:** Gitleaks, TruffleHog  
+          - **Dependencies:** Trivy
+          - **IaC:** Trivy Misconfig
           
           ## Summary
           - **Total Tools:** TOOLS_PLACEHOLDER
           - **Total Findings:** FINDINGS_PLACEHOLDER
           
           ## View Results
-          📍 Check the **Security** tab in your repository for detailed findings.
+          Check the **Security** tab in your repository for detailed findings.
           
           All SARIF reports have been uploaded and are available for review in the workflow artifacts.
           EOFSUMMARY
